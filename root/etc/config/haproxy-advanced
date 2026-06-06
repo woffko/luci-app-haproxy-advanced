@@ -1,0 +1,142 @@
+config global 'global'
+	option enabled '0'
+	option maxconn '1000'
+	option log_facility 'local0'
+	option log_level 'info'
+	option stats_enabled '1'
+	option stats_bind '127.0.0.1:2200'
+	option stats_uri '/'
+	option ssl_default_dh_param '2048'
+	option dontlog_normal '1'
+	option log_separate_errors '1'
+	option log_detailed '1'
+	option hardening '1'
+	option advanced_global ''
+
+config frontend
+	option name 'ServiceExample'
+	option enabled '0'
+	option mode 'http'
+	option default_backend 'ServiceExample_https_backend'
+	option http_connection_mode 'http-keep-alive'
+	option forwardfor '1'
+	option certificate_mode 'pem'
+	option certificate '/etc/haproxy/certs/service-example.pem'
+	option advanced_frontend ''
+
+config bind
+	option frontend 'ServiceExample'
+	option name 'wan_https'
+	option address 'wan_ipv4'
+	option port '443'
+	option ssl '1'
+
+config bind
+	option frontend 'ServiceExample'
+	option name 'backup_wan_https'
+	option address 'opt4_ipv4'
+	option port '443'
+	option ssl '1'
+
+config backend
+	option name 'ServiceExample_https_backend'
+	option mode 'http'
+	option balance 'none'
+	option check_type 'none'
+	option advanced_backend ''
+
+config server
+	option backend 'ServiceExample_https_backend'
+	option name 'backend1'
+	option address '192.168.10.2'
+	option port '443'
+	option ssl '1'
+	option check_ssl '1'
+	option verify 'none'
+	option enabled '1'
+
+config acl
+	option frontend 'ServiceExample'
+	option name 'published_host'
+	option type 'host_matches'
+	option value 'service.example.com'
+
+config acl
+	option frontend 'ServiceExample'
+	option name 'trusted_internal_net'
+	option type 'source_ip'
+	option value '192.168.20.0/24'
+
+config acl
+	option frontend 'ServiceExample'
+	option name 'auth_ok'
+	option type 'custom'
+	option value 'http_auth(ServiceUsers)'
+
+config acl
+	option frontend 'ServiceExample'
+	option name 'admin_path'
+	option type 'path_starts_with'
+	option value '/admin/'
+
+config acl
+	option frontend 'ServiceExample'
+	option name 'public_share_path'
+	option type 'path_starts_with'
+	option value '/share/'
+
+config acl
+	option frontend 'ServiceExample'
+	option name 'blocked_internal_path'
+	option type 'path_starts_with'
+	option value '/cgi-bin/'
+
+config action
+	option frontend 'ServiceExample'
+	option order '10'
+	option action 'allow'
+	option condition 'trusted_internal_net'
+
+config action
+	option frontend 'ServiceExample'
+	option order '20'
+	option action 'deny'
+	option condition '!published_host'
+	option deny_status '403'
+
+config action
+	option frontend 'ServiceExample'
+	option order '30'
+	option action 'deny'
+	option condition '!trusted_internal_net admin_path'
+	option deny_status '403'
+
+config action
+	option frontend 'ServiceExample'
+	option order '40'
+	option action 'auth'
+	option realm 'ServiceUsers'
+	option unless 'auth_ok'
+
+config action
+	option frontend 'ServiceExample'
+	option order '50'
+	option action 'allow'
+	option condition 'public_share_path'
+
+config action
+	option frontend 'ServiceExample'
+	option order '60'
+	option action 'deny'
+	option condition 'blocked_internal_path'
+	option deny_status '403'
+
+config userlist
+	option name 'ServiceUsers'
+
+config user
+	option userlist 'ServiceUsers'
+	option username 'user1'
+	option password_hash '$2y$10$REPLACE_ME'
+	option enabled '1'
+

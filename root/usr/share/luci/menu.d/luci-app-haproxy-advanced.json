@@ -1,0 +1,15 @@
+{
+	"admin/services/haproxy-advanced": {
+		"title": "HAProxy Advanced",
+		"order": 61,
+		"action": {
+			"type": "view",
+			"path": "haproxy-advanced"
+		},
+		"depends": {
+			"acl": [ "luci-app-haproxy-advanced" ],
+			"uci": { "haproxy-advanced": true }
+		}
+	}
+}
+

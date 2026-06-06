@@ -1,0 +1,8 @@
+*.ipk
+*.apk
+*.tar.gz
+*.tmp
+/bin/
+/build_dir/
+/tmp/
+

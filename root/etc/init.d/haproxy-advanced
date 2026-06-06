@@ -1,0 +1,988 @@
+#!/bin/sh /etc/rc.common
+
+START=86
+STOP=80
+NAME=haproxy-advanced
+USE_PROCD=1
+
+HAPROXY_BIN="/usr/sbin/haproxy"
+CONFIG_FILE="/var/etc/${NAME}.cfg"
+CONFIG_BACKUP="/var/etc/${NAME}.cfg.last-good"
+PID_FILE="/var/run/${NAME}.pid"
+CERT_DIR="/var/etc/${NAME}-certs"
+RUN_USER="nobody"
+RUN_GROUP="nogroup"
+
+. /lib/functions.sh
+. /lib/functions/network.sh
+
+extra_command "preview" "Print generated HAProxy config"
+extra_command "validate" "Validate generated HAProxy config"
+extra_command "status" "Print service status"
+extra_command "logs" "Print recent HAProxy logs"
+
+service_triggers() {
+	procd_add_reload_trigger "$NAME"
+	procd_add_raw_trigger acme.renew 5000 "/etc/init.d/${NAME}" reload
+}
+
+log_msg() {
+	logger -t "$NAME" "$1"
+}
+
+fail() {
+	log_msg "$1"
+	printf '%s\n' "$1" >&2
+	return 1
+}
+
+is_uint() {
+	case "$1" in
+		""|*[!0-9]*) return 1 ;;
+	esac
+
+	return 0
+}
+
+is_port() {
+	is_uint "$1" || return 1
+	[ "$1" -ge 1 ] && [ "$1" -le 65535 ]
+}
+
+is_safe_name() {
+	case "$1" in
+		""|*[!A-Za-z0-9_.-]*) return 1 ;;
+	esac
+
+	return 0
+}
+
+is_safe_path() {
+	case "$1" in
+		/*) ;;
+		*) return 1 ;;
+	esac
+
+	case "$1" in
+		*..*|*[\`\'\"\\\;\|\&\<\>]*) return 1 ;;
+	esac
+
+	printf '%s' "$1" | grep -q '[[:cntrl:]]' && return 1
+	return 0
+}
+
+is_safe_word_list() {
+	local item=""
+
+	set -f
+	set -- $1
+	set +f
+
+	[ "$#" -gt 0 ] || return 1
+
+	for item in "$@"; do
+		case "$item" in
+			""|*[!A-Za-z0-9_.:-]*) return 1 ;;
+		esac
+	done
+
+	return 0
+}
+
+is_safe_src_list() {
+	local item=""
+
+	set -f
+	set -- $1
+	set +f
+
+	[ "$#" -gt 0 ] || return 1
+
+	for item in "$@"; do
+		case "$item" in
+			""|*[!0-9A-Fa-f:.\/-]*) return 1 ;;
+		esac
+	done
+
+	return 0
+}
+
+is_safe_path_list() {
+	local item=""
+
+	set -f
+	set -- $1
+	set +f
+
+	[ "$#" -gt 0 ] || return 1
+
+	for item in "$@"; do
+		case "$item" in
+			/*) ;;
+			*) return 1 ;;
+		esac
+
+		case "$item" in
+			*[\`\'\"\\\;\|\&\<\>]*) return 1 ;;
+		esac
+		printf '%s' "$item" | grep -q '[[:cntrl:]]' && return 1
+	done
+
+	return 0
+}
+
+is_safe_condition() {
+	local item=""
+	local token=""
+
+	[ -n "$1" ] || return 1
+
+	set -f
+	set -- $1
+	set +f
+
+	for item in "$@"; do
+		case "$item" in
+			"!"|"!!"*) return 1 ;;
+		esac
+
+		token="${item#!}"
+		is_safe_name "$token" || return 1
+	done
+
+	return 0
+}
+
+is_safe_header_value() {
+	case "$1" in
+		""|*[\`\'\"\\\;\|\&\<\>]*) return 1 ;;
+	esac
+
+	printf '%s' "$1" | grep -q '[[:cntrl:]]' && return 1
+	return 0
+}
+
+is_safe_advanced_line() {
+	local keyword=""
+	local second=""
+
+	case "$1" in
+		*[\`]*) return 1 ;;
+	esac
+
+	printf '%s' "$1" | grep -q '[[:cntrl:]]' && return 1
+
+	set -f
+	set -- $1
+	set +f
+
+	keyword="$(printf '%s' "${1:-}" | tr 'A-Z' 'a-z')"
+	second="$(printf '%s' "${2:-}" | tr 'A-Z' 'a-z')"
+
+	case "$keyword" in
+		global|defaults|frontend|backend|listen|peers|resolvers|userlist|mailers|program)
+			return 1
+			;;
+		external-check|lua-load|lua-prepend-path|module-load|setenv|presetenv|unsetenv)
+			return 1
+			;;
+		stats)
+			[ "$second" = "socket" ] && return 1
+			;;
+	esac
+
+	return 0
+}
+
+append_advanced_block() {
+	local block="$1"
+	local line=""
+
+	[ -n "$block" ] || return 0
+
+	printf '%s\n' "$block" | while IFS= read -r line; do
+		[ -n "$line" ] || continue
+		is_safe_advanced_line "$line" || {
+			fail "Unsafe advanced HAProxy directive: $line"
+			exit 1
+		}
+		printf '    %s\n' "$line" >> "$CONFIG_OUT"
+	done
+}
+
+resolve_bind_address() {
+	local address="$1"
+	local iface=""
+	local ipaddr=""
+
+	case "$address" in
+		""|"*"|"all")
+			printf '*'
+			return 0
+			;;
+		*_ipv4)
+			iface="${address%_ipv4}"
+			network_flush_cache
+			network_get_ipaddr ipaddr "$iface" || {
+				fail "Unable to resolve IPv4 address for interface alias: $address"
+				return 1
+			}
+			printf '%s' "$ipaddr"
+			return 0
+			;;
+	esac
+
+	case "$address" in
+		*[!0-9A-Za-z_.:-]*) return 1 ;;
+	esac
+
+	printf '%s' "$address"
+	return 0
+}
+
+build_certificate() {
+	local frontend_name="$1"
+	local mode="$2"
+	local certificate="$3"
+	local fullchain="$4"
+	local key="$5"
+	local target=""
+	local tmp=""
+	local old_umask=""
+
+	case "$mode" in
+		""|"pem"|"acme_combined")
+			is_safe_path "$certificate" || return 1
+			printf '%s' "$certificate"
+			return 0
+			;;
+		"split")
+			is_safe_path "$fullchain" || return 1
+			is_safe_path "$key" || return 1
+			[ -r "$fullchain" ] || return 1
+			[ -r "$key" ] || return 1
+
+			mkdir -p "$CERT_DIR" || return 1
+			target="${CERT_DIR}/${frontend_name}.pem"
+			tmp="${target}.$$"
+			old_umask="$(umask)"
+			umask 077
+			cat "$fullchain" "$key" > "$tmp" || {
+				umask "$old_umask"
+				rm -f "$tmp"
+				return 1
+			}
+			umask "$old_umask"
+			chmod 600 "$tmp"
+			mv "$tmp" "$target" || return 1
+			printf '%s' "$target"
+			return 0
+			;;
+	esac
+
+	return 1
+}
+
+render_global() {
+	local maxconn log_facility log_level stats_enabled stats_bind stats_uri ssl_dh
+	local dontlog_normal log_separate_errors log_detailed advanced_global
+
+	config_get maxconn global maxconn "1000"
+	config_get log_facility global log_facility "local0"
+	config_get log_level global log_level "info"
+	config_get_bool stats_enabled global stats_enabled "1"
+	config_get stats_bind global stats_bind "127.0.0.1:2200"
+	config_get stats_uri global stats_uri "/"
+	config_get ssl_dh global ssl_default_dh_param "2048"
+	config_get_bool dontlog_normal global dontlog_normal "1"
+	config_get_bool log_separate_errors global log_separate_errors "1"
+	config_get_bool log_detailed global log_detailed "1"
+	config_get advanced_global global advanced_global ""
+
+	is_uint "$maxconn" || return 1
+	is_uint "$ssl_dh" || return 1
+	is_safe_name "$log_facility" || return 1
+	is_safe_name "$log_level" || return 1
+	is_safe_header_value "$stats_uri" || return 1
+
+	{
+		printf 'global\n'
+		printf '    log /dev/log %s %s\n' "$log_facility" "$log_level"
+		printf '    maxconn %s\n' "$maxconn"
+		printf '    user %s\n' "$RUN_USER"
+		printf '    group %s\n' "$RUN_GROUP"
+		printf '    tune.ssl.default-dh-param %s\n' "$ssl_dh"
+	} >> "$CONFIG_OUT"
+
+	append_advanced_block "$advanced_global" || return 1
+
+	{
+		printf '\n'
+		printf 'defaults\n'
+		printf '    log global\n'
+		printf '    mode http\n'
+		if [ "$log_detailed" = "1" ]; then
+			printf '    option httplog\n'
+		else
+			printf '    option dontlognull\n'
+		fi
+		[ "$dontlog_normal" = "1" ] && printf '    option dontlog-normal\n'
+		[ "$log_separate_errors" = "1" ] && printf '    option log-separate-errors\n'
+		printf '    timeout connect 10s\n'
+		printf '    timeout client 60s\n'
+		printf '    timeout server 60s\n'
+	} >> "$CONFIG_OUT"
+
+	if [ "$stats_enabled" = "1" ]; then
+		is_safe_header_value "$stats_bind" || return 1
+		{
+			printf '\n'
+			printf 'listen haproxy_advanced_stats\n'
+			printf '    bind %s\n' "$stats_bind"
+			printf '    mode http\n'
+			printf '    stats enable\n'
+			printf '    stats uri %s\n' "$stats_uri"
+		} >> "$CONFIG_OUT"
+	fi
+
+	return 0
+}
+
+render_user() {
+	local section="$1"
+	local userlist="$2"
+	local section_userlist username password_hash enabled
+
+	config_get section_userlist "$section" userlist ""
+	[ "$section_userlist" = "$userlist" ] || return 0
+
+	config_get_bool enabled "$section" enabled "1"
+	[ "$enabled" = "1" ] || return 0
+
+	config_get username "$section" username ""
+	config_get password_hash "$section" password_hash ""
+
+	is_safe_name "$username" || {
+		VALID_CONFIG=0
+		fail "Invalid Basic Auth username: $username"
+		return 0
+	}
+
+	case "$password_hash" in
+		""|*[[:space:]\`\'\"\\\;\|\&\<\>]*) 
+			VALID_CONFIG=0
+			fail "Invalid Basic Auth password hash for user: $username"
+			return 0
+			;;
+	esac
+
+	printf '    user %s password %s\n' "$username" "$password_hash" >> "$CONFIG_OUT"
+	USER_COUNT=$((USER_COUNT + 1))
+}
+
+render_userlist() {
+	local section="$1"
+	local name=""
+
+	config_get name "$section" name ""
+	is_safe_name "$name" || {
+		VALID_CONFIG=0
+		fail "Invalid userlist name: $name"
+		return 0
+	}
+
+	USER_COUNT=0
+	printf '\nuserlist %s\n' "$name" >> "$CONFIG_OUT"
+	config_foreach render_user user "$name"
+
+	if [ "$USER_COUNT" -eq 0 ]; then
+		printf '    # no enabled users\n' >> "$CONFIG_OUT"
+	fi
+}
+
+render_bind() {
+	local section="$1"
+	local frontend_name="$2"
+	local frontend_cert="$3"
+	local section_frontend name address port ssl bind_addr bind_line cert
+
+	config_get section_frontend "$section" frontend ""
+	[ "$section_frontend" = "$frontend_name" ] || return 0
+
+	config_get name "$section" name "$section"
+	config_get address "$section" address "*"
+	config_get port "$section" port ""
+	config_get_bool ssl "$section" ssl "0"
+	config_get cert "$section" certificate "$frontend_cert"
+
+	is_safe_name "$name" || {
+		VALID_CONFIG=0
+		fail "Invalid bind name: $name"
+		return 0
+	}
+
+	is_port "$port" || {
+		VALID_CONFIG=0
+		fail "Invalid bind port for $name: $port"
+		return 0
+	}
+
+	bind_addr="$(resolve_bind_address "$address")" || {
+		VALID_CONFIG=0
+		return 0
+	}
+
+	bind_line="${bind_addr}:${port}"
+	if [ "$ssl" = "1" ]; then
+		is_safe_path "$cert" || {
+			VALID_CONFIG=0
+			fail "Invalid certificate path for bind $name"
+			return 0
+		}
+		bind_line="${bind_line} ssl crt ${cert}"
+	fi
+
+	printf '    bind %s\n' "$bind_line" >> "$CONFIG_OUT"
+	BIND_COUNT=$((BIND_COUNT + 1))
+}
+
+render_acl() {
+	local section="$1"
+	local frontend_name="$2"
+	local section_frontend name type value
+	local auth_list=""
+
+	config_get section_frontend "$section" frontend ""
+	[ "$section_frontend" = "$frontend_name" ] || return 0
+
+	config_get name "$section" name ""
+	config_get type "$section" type ""
+	config_get value "$section" value ""
+
+	is_safe_name "$name" || {
+		VALID_CONFIG=0
+		fail "Invalid ACL name: $name"
+		return 0
+	}
+
+	case "$type" in
+		host_matches)
+			is_safe_word_list "$value" || {
+				VALID_CONFIG=0
+				fail "Invalid host ACL value for $name"
+				return 0
+			}
+			printf '    acl %s hdr(host) -i %s\n' "$name" "$value" >> "$CONFIG_OUT"
+			;;
+		path_starts_with)
+			is_safe_path_list "$value" || {
+				VALID_CONFIG=0
+				fail "Invalid path ACL value for $name"
+				return 0
+			}
+			printf '    acl %s path_beg %s\n' "$name" "$value" >> "$CONFIG_OUT"
+			;;
+		source_ip)
+			is_safe_src_list "$value" || {
+				VALID_CONFIG=0
+				fail "Invalid source ACL value for $name"
+				return 0
+			}
+			printf '    acl %s src %s\n' "$name" "$value" >> "$CONFIG_OUT"
+			;;
+		custom)
+			case "$value" in
+				http_auth\(*\))
+					auth_list="${value#http_auth(}"
+					auth_list="${auth_list%)}"
+					is_safe_name "$auth_list" || {
+						VALID_CONFIG=0
+						fail "Invalid http_auth userlist in ACL $name"
+						return 0
+					}
+					printf '    acl %s %s\n' "$name" "$value" >> "$CONFIG_OUT"
+					;;
+				*)
+					VALID_CONFIG=0
+					fail "Unsupported custom ACL for $name. Only http_auth(UserList) is allowed."
+					return 0
+					;;
+			esac
+			;;
+		*)
+			VALID_CONFIG=0
+			fail "Unsupported ACL type for $name: $type"
+			return 0
+			;;
+	esac
+
+	ACL_COUNT=$((ACL_COUNT + 1))
+}
+
+collect_action() {
+	local section="$1"
+	local frontend_name="$2"
+	local action_file="$3"
+	local section_frontend order action condition unless realm deny_status line
+
+	config_get section_frontend "$section" frontend ""
+	[ "$section_frontend" = "$frontend_name" ] || return 0
+
+	config_get order "$section" order "100"
+	config_get action "$section" action ""
+	config_get condition "$section" condition ""
+	config_get unless "$section" unless ""
+	config_get realm "$section" realm ""
+	config_get deny_status "$section" deny_status "403"
+
+	is_uint "$order" || {
+		VALID_CONFIG=0
+		fail "Invalid action order in $section: $order"
+		return 0
+	}
+
+	case "$action" in
+		allow)
+			[ -n "$condition" ] && is_safe_condition "$condition" || {
+				VALID_CONFIG=0
+				fail "Invalid allow condition in $section"
+				return 0
+			}
+			line="http-request allow if ${condition}"
+			;;
+		deny)
+			is_uint "$deny_status" || {
+				VALID_CONFIG=0
+				fail "Invalid deny status in $section: $deny_status"
+				return 0
+			}
+			[ -n "$condition" ] && is_safe_condition "$condition" || {
+				VALID_CONFIG=0
+				fail "Invalid deny condition in $section"
+				return 0
+			}
+			line="http-request deny deny_status ${deny_status} if ${condition}"
+			;;
+		auth)
+			is_safe_name "$realm" || {
+				VALID_CONFIG=0
+				fail "Invalid auth realm in $section: $realm"
+				return 0
+			}
+			if [ -n "$unless" ]; then
+				is_safe_condition "$unless" || {
+					VALID_CONFIG=0
+					fail "Invalid auth unless condition in $section"
+					return 0
+				}
+				line="http-request auth realm ${realm} unless ${unless}"
+			else
+				[ -n "$condition" ] && is_safe_condition "$condition" || {
+					VALID_CONFIG=0
+					fail "Invalid auth condition in $section"
+					return 0
+				}
+				line="http-request auth realm ${realm} if ${condition}"
+			fi
+			;;
+		*)
+			VALID_CONFIG=0
+			fail "Unsupported action in $section: $action"
+			return 0
+			;;
+	esac
+
+	printf '%06d %s\n' "$order" "$line" >> "$action_file"
+	ACTION_COUNT=$((ACTION_COUNT + 1))
+}
+
+render_actions() {
+	local frontend_name="$1"
+	local action_file=""
+
+	action_file="$(mktemp "/var/etc/${NAME}.actions.XXXXXX")" || return 1
+	ACTION_COUNT=0
+	config_foreach collect_action action "$frontend_name" "$action_file"
+
+	if [ "$VALID_CONFIG" = "1" ] && [ -s "$action_file" ]; then
+		sort -n "$action_file" | cut -d ' ' -f 2- >> "$CONFIG_OUT"
+	fi
+
+	rm -f "$action_file"
+	return 0
+}
+
+render_frontend() {
+	local section="$1"
+	local name enabled mode default_backend connection forwardfor certificate_mode
+	local certificate fullchain key effective_cert hardening rate_limit_enabled rate_limit_requests
+	local advanced_frontend
+
+	config_get_bool enabled "$section" enabled "1"
+	[ "$enabled" = "1" ] || return 0
+
+	config_get name "$section" name ""
+	config_get mode "$section" mode "http"
+	config_get default_backend "$section" default_backend ""
+	config_get connection "$section" http_connection_mode ""
+	config_get_bool forwardfor "$section" forwardfor "1"
+	config_get certificate_mode "$section" certificate_mode "pem"
+	config_get certificate "$section" certificate ""
+	config_get fullchain "$section" certificate_fullchain ""
+	config_get key "$section" certificate_key ""
+	config_get_bool hardening "$section" hardening "$(uci -q get ${NAME}.global.hardening || printf 1)"
+	config_get_bool rate_limit_enabled "$section" rate_limit_enabled "0"
+	config_get rate_limit_requests "$section" rate_limit_requests "30"
+	config_get advanced_frontend "$section" advanced_frontend ""
+
+	is_safe_name "$name" || {
+		VALID_CONFIG=0
+		fail "Invalid frontend name: $name"
+		return 0
+	}
+
+	is_safe_name "$default_backend" || {
+		VALID_CONFIG=0
+		fail "Invalid default backend for frontend $name"
+		return 0
+	}
+
+	case "$mode" in
+		http) ;;
+		*) 
+			VALID_CONFIG=0
+			fail "Unsupported frontend mode for $name: $mode"
+			return 0
+			;;
+	esac
+
+	if [ -n "$certificate" ] || [ "$certificate_mode" = "split" ]; then
+		effective_cert="$(build_certificate "$name" "$certificate_mode" "$certificate" "$fullchain" "$key")" || {
+			VALID_CONFIG=0
+			fail "Unable to prepare certificate for frontend $name"
+			return 0
+		}
+	fi
+
+	{
+		printf '\nfrontend %s\n' "$name"
+		printf '    mode %s\n' "$mode"
+	} >> "$CONFIG_OUT"
+
+	BIND_COUNT=0
+	config_foreach render_bind bind "$name" "$effective_cert"
+	if [ "$BIND_COUNT" -eq 0 ]; then
+		VALID_CONFIG=0
+		fail "Frontend $name has no bind entries"
+		return 0
+	fi
+
+	[ "$forwardfor" = "1" ] && printf '    option forwardfor\n' >> "$CONFIG_OUT"
+	[ -n "$connection" ] && {
+		is_safe_name "$connection" || {
+			VALID_CONFIG=0
+			fail "Invalid HTTP connection mode for frontend $name"
+			return 0
+		}
+		printf '    option %s\n' "$connection" >> "$CONFIG_OUT"
+	}
+
+	if [ "$rate_limit_enabled" = "1" ]; then
+		is_uint "$rate_limit_requests" || {
+			VALID_CONFIG=0
+			fail "Invalid rate limit for frontend $name"
+			return 0
+		}
+		printf '    stick-table type ip size 100k expire 10m store http_req_rate(10s)\n' >> "$CONFIG_OUT"
+		printf '    http-request track-sc0 src\n' >> "$CONFIG_OUT"
+		printf '    http-request deny deny_status 429 if { sc_http_req_rate(0) gt %s }\n' "$rate_limit_requests" >> "$CONFIG_OUT"
+	fi
+
+	if [ "$hardening" = "1" ]; then
+		printf '    http-request deny if { fc_http_major 1 } { req.body_size 0 } { req.hdr(content-length) -m found } !{ req.hdr(transfer-encoding) -m found } !{ method CONNECT }\n' >> "$CONFIG_OUT"
+	fi
+
+	ACL_COUNT=0
+	config_foreach render_acl acl "$name"
+
+	render_actions "$name"
+	append_advanced_block "$advanced_frontend" || {
+		VALID_CONFIG=0
+		return 0
+	}
+
+	printf '    default_backend %s\n' "$default_backend" >> "$CONFIG_OUT"
+}
+
+render_server() {
+	local section="$1"
+	local backend_name="$2"
+	local section_backend name address port ssl verify enabled check ca_file line
+
+	config_get section_backend "$section" backend ""
+	[ "$section_backend" = "$backend_name" ] || return 0
+
+	config_get_bool enabled "$section" enabled "1"
+	[ "$enabled" = "1" ] || return 0
+
+	config_get name "$section" name ""
+	config_get address "$section" address ""
+	config_get port "$section" port ""
+	config_get_bool ssl "$section" ssl "0"
+	config_get verify "$section" verify "none"
+	config_get_bool check "$section" check "0"
+	config_get ca_file "$section" ca_file ""
+
+	is_safe_name "$name" || {
+		VALID_CONFIG=0
+		fail "Invalid server name: $name"
+		return 0
+	}
+
+	case "$address" in
+		""|*[!0-9A-Za-z_.:-]*) 
+			VALID_CONFIG=0
+			fail "Invalid server address for $name: $address"
+			return 0
+			;;
+	esac
+
+	is_port "$port" || {
+		VALID_CONFIG=0
+		fail "Invalid server port for $name: $port"
+		return 0
+	}
+
+	line="    server ${name} ${address}:${port}"
+	if [ "$ssl" = "1" ]; then
+		case "$verify" in
+			none|required) ;;
+			*)
+				VALID_CONFIG=0
+				fail "Invalid TLS verify mode for server $name: $verify"
+				return 0
+				;;
+		esac
+		line="${line} ssl verify ${verify}"
+		if [ -n "$ca_file" ]; then
+			is_safe_path "$ca_file" || {
+				VALID_CONFIG=0
+				fail "Invalid CA file for server $name"
+				return 0
+			}
+			line="${line} ca-file ${ca_file}"
+		fi
+	fi
+	[ "$check" = "1" ] && line="${line} check"
+
+	printf '%s\n' "$line" >> "$CONFIG_OUT"
+	SERVER_COUNT=$((SERVER_COUNT + 1))
+}
+
+render_backend() {
+	local section="$1"
+	local name mode balance advanced_backend
+
+	config_get name "$section" name ""
+	config_get mode "$section" mode "http"
+	config_get balance "$section" balance "none"
+	config_get advanced_backend "$section" advanced_backend ""
+
+	is_safe_name "$name" || {
+		VALID_CONFIG=0
+		fail "Invalid backend name: $name"
+		return 0
+	}
+
+	case "$mode" in
+		http) ;;
+		*)
+			VALID_CONFIG=0
+			fail "Unsupported backend mode for $name: $mode"
+			return 0
+			;;
+	esac
+
+	{
+		printf '\nbackend %s\n' "$name"
+		printf '    mode %s\n' "$mode"
+	} >> "$CONFIG_OUT"
+
+	case "$balance" in
+		""|"none") ;;
+		roundrobin|leastconn|source|first)
+			printf '    balance %s\n' "$balance" >> "$CONFIG_OUT"
+			;;
+		*)
+			VALID_CONFIG=0
+			fail "Unsupported balance mode for backend $name: $balance"
+			return 0
+			;;
+	esac
+
+	SERVER_COUNT=0
+	config_foreach render_server server "$name"
+	if [ "$SERVER_COUNT" -eq 0 ]; then
+		VALID_CONFIG=0
+		fail "Backend $name has no enabled servers"
+		return 0
+	fi
+
+	append_advanced_block "$advanced_backend" || {
+		VALID_CONFIG=0
+		return 0
+	}
+}
+
+write_config() {
+	local output="$1"
+	local old_umask=""
+
+	VALID_CONFIG=1
+	CONFIG_OUT="$output"
+
+	mkdir -p /var/etc /var/run "$CERT_DIR" || return 1
+	old_umask="$(umask)"
+	umask 077
+	: > "$CONFIG_OUT" || {
+		umask "$old_umask"
+		return 1
+	}
+	umask "$old_umask"
+
+	render_global || VALID_CONFIG=0
+	config_foreach render_userlist userlist
+	config_foreach render_frontend frontend
+	config_foreach render_backend backend
+
+	[ "$VALID_CONFIG" = "1" ] || return 1
+	return 0
+}
+
+load_config() {
+	config_load "$NAME"
+}
+
+global_enabled() {
+	local enabled="0"
+	config_get_bool enabled global enabled "0"
+	[ "$enabled" = "1" ]
+}
+
+prepare_config() {
+	local tmp=""
+
+	[ -x "$HAPROXY_BIN" ] || return 1
+	load_config
+
+	tmp="$(mktemp "/var/etc/${NAME}.cfg.XXXXXX")" || return 1
+	write_config "$tmp" || {
+		rm -f "$tmp"
+		return 1
+	}
+
+	if ! "$HAPROXY_BIN" -q -c -f "$tmp"; then
+		rm -f "$tmp"
+		fail "Generated HAProxy configuration failed validation"
+		return 1
+	fi
+
+	[ -s "$CONFIG_FILE" ] && cp "$CONFIG_FILE" "$CONFIG_BACKUP"
+	mv "$tmp" "$CONFIG_FILE" || {
+		rm -f "$tmp"
+		[ -s "$CONFIG_BACKUP" ] && cp "$CONFIG_BACKUP" "$CONFIG_FILE"
+		return 1
+	}
+
+	return 0
+}
+
+start_service() {
+	[ -x "$HAPROXY_BIN" ] || return 1
+	load_config
+
+	if ! global_enabled; then
+		rm -f "$CONFIG_FILE"
+		return 0
+	fi
+
+	prepare_config || return 1
+
+	procd_open_instance
+	procd_set_param respawn
+	procd_set_param file "/etc/config/${NAME}"
+	procd_set_param reload_signal USR2
+	procd_set_param command "$HAPROXY_BIN" -q -W -db -f "$CONFIG_FILE" -p "$PID_FILE"
+	procd_set_param stdout 1
+	procd_set_param stderr 1
+	procd_set_param term_timeout 5
+	procd_set_param limits nofile="65535 65535"
+	procd_close_instance
+}
+
+reload_service() {
+	load_config
+
+	if ! global_enabled; then
+		procd_kill "$NAME" "*" >/dev/null 2>&1
+		rm -f "$CONFIG_FILE"
+		return 0
+	fi
+
+	prepare_config || return 1
+	procd_send_signal "$NAME" "*" USR2 || /etc/init.d/"$NAME" restart
+}
+
+stop_service() {
+	rm -f "$CONFIG_FILE"
+}
+
+preview() {
+	local tmp=""
+
+	load_config
+	tmp="$(mktemp "/var/etc/${NAME}.preview.XXXXXX")" || return 1
+	write_config "$tmp" || {
+		rm -f "$tmp"
+		return 1
+	}
+	cat "$tmp"
+	rm -f "$tmp"
+}
+
+validate() {
+	local tmp=""
+
+	[ -x "$HAPROXY_BIN" ] || return 1
+	load_config
+	tmp="$(mktemp "/var/etc/${NAME}.validate.XXXXXX")" || return 1
+	write_config "$tmp" || {
+		rm -f "$tmp"
+		return 1
+	}
+
+	"$HAPROXY_BIN" -c -f "$tmp"
+	local rc="$?"
+	rm -f "$tmp"
+	return "$rc"
+}
+
+status_service() {
+	local enabled="0"
+	local running="0"
+	local pid=""
+
+	load_config
+	config_get_bool enabled global enabled "0"
+	[ -s "$PID_FILE" ] && pid="$(cat "$PID_FILE" 2>/dev/null)"
+	[ -n "$pid" ] && kill -0 "$pid" 2>/dev/null && running="1"
+
+	printf 'enabled=%s\n' "$enabled"
+	printf 'running=%s\n' "$running"
+	[ -n "$pid" ] && printf 'pid=%s\n' "$pid"
+	printf 'config=%s\n' "$CONFIG_FILE"
+}
+
+logs() {
+	logread 2>/dev/null | grep -E 'haproxy|haproxy-advanced' | tail -n 120 || true
+}
