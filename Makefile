@@ -7,7 +7,7 @@ PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=LICENSE
 PKG_MAINTAINER:=woffko <https://github.com/woffko>
 
-LUCI_TITLE:=LuCI support for HAProxy Advanced reverse proxy
+LUCI_TITLE:=LuCI app for managing HAProxy HTTP/HTTPS reverse proxy services
 LUCI_DEPENDS:=+luci-base +haproxy
 LUCI_PKGARCH:=all
 LUCI_URL:=https://github.com/woffko/luci-app-haproxy-advanced
