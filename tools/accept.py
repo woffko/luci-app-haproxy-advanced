@@ -96,13 +96,13 @@ def last_apply(vm):
 def apply_config(vm, text, wait_runtime=True):
     """Install a UCI configuration and reload; return last-apply.json."""
     vm.upload(text, "/etc/config/haproxy-advanced", mode="600")
-    before = (last_apply(vm) or {}).get("time", 0)
+    vm.run("rm -f /var/run/haproxy-advanced/last-apply.json")
     vm.run("/etc/init.d/haproxy-advanced reload", check=False, timeout=120)
 
     for _ in range(40):
         la = last_apply(vm)
 
-        if la and la.get("time", 0) >= before and (not wait_runtime or la.get("state") != "applied" or la.get("runtime")):
+        if la and (not wait_runtime or la.get("state") != "applied" or la.get("runtime")):
             return la
 
         time.sleep(0.5)
@@ -169,8 +169,8 @@ def snapshot(vm, out, args):
         "enabled_init": vm.out("ls /etc/rc.d | sort").splitlines(),
         "nft": vm.out("nft list ruleset"),
         "listening": vm.out("netstat -ltn 2>/dev/null | sort").splitlines(),
-        "ca_bundle": vm.out("sha256sum /etc/ssl/certs/ca-certificates.crt 2>/dev/null").strip(),
-        "crontab": vm.out("cat /etc/crontabs/root 2>/dev/null"),
+        "ca_bundle": vm.out("sha256sum /etc/ssl/certs/ca-certificates.crt 2>/dev/null", check=False).strip(),
+        "crontab": vm.out("cat /etc/crontabs/root 2>/dev/null", check=False),
         "dirs": vm.out("ls -d /etc/acme /etc/ssl/acme /etc/haproxy /etc/haproxy.cfg 2>/dev/null", check=False).splitlines(),
         "luci_lang": vm.out("uci -q get luci.main.lang", check=False).strip(),
     }
@@ -191,7 +191,8 @@ def install(vm, out, args):
         names.append("%s/%s" % (vmlib.STAGE, a.name))
 
     save(out, "apk-update.txt", vm.out("apk update 2>&1", check=False, timeout=300))
-    r = vm.run("apk add --allow-untrusted %s 2>&1" % " ".join(names), check=False, timeout=600)
+    names = [n for n in names if "luci-i18n" not in n]
+    r = vm.run("apk add --allow-untrusted %s acme-acmesh 2>&1" % " ".join(names), check=False, timeout=600)
     save(out, "apk-add.txt", r.stdout.decode(errors="replace"))
     c.check("apk add exits 0", r.returncode == 0, r.stdout.decode(errors="replace")[-500:])
     listed = vm.out("apk list -I 2>/dev/null | grep -E '^(haproxy|haproxy-advanced|luci-app-haproxy-advanced)-[0-9]'", check=False)
@@ -383,7 +384,7 @@ config service 'pt'
 	option listener 'pub'
 	list hostname 'pt.hatest.example'
 	option mode 'passthrough'
-	option backend 'pt'
+	option backend 'pt_backend'
 
 config backend 'echo_http'
 
@@ -414,10 +415,10 @@ config server
 	option address '192.168.189.142'
 	option port '19081'
 
-config backend 'pt'
+config backend 'pt_backend'
 
 config server
-	option backend 'pt'
+	option backend 'pt_backend'
 	option name 's1'
 	option address '192.168.189.142'
 	option port '19444'
@@ -696,7 +697,7 @@ def cleanup(vm, out, args):
             if d not in snap["dirs"]:
                 vm.run("rm -rf %s" % d, check=False)
 
-        if vm.out("cat /etc/crontabs/root 2>/dev/null") != snap["crontab"]:
+        if vm.out("cat /etc/crontabs/root 2>/dev/null", check=False) != snap["crontab"]:
             vm.upload(snap["crontab"], vmlib.STAGE + "/crontab")
             vm.run("cp %s/crontab /etc/crontabs/root && /etc/init.d/cron restart; rm -rf %s" % (vmlib.STAGE, vmlib.STAGE),
                    check=False)
@@ -708,9 +709,9 @@ def cleanup(vm, out, args):
         c.check("/etc/config as in the snapshot", hashes == snap["config_hashes"], sorted(set(hashes) ^ set(snap["config_hashes"])))
         init = vm.out("ls /etc/rc.d | sort").splitlines()
         c.check("enabled init scripts as in the snapshot", init == snap["enabled_init"], sorted(set(init) ^ set(snap["enabled_init"])))
-        ca = vm.out("sha256sum /etc/ssl/certs/ca-certificates.crt 2>/dev/null").strip()
+        ca = vm.out("sha256sum /etc/ssl/certs/ca-certificates.crt 2>/dev/null", check=False).strip()
         c.check("CA bundle as in the snapshot", ca == snap["ca_bundle"], ca)
-        cron = vm.out("cat /etc/crontabs/root 2>/dev/null")
+        cron = vm.out("cat /etc/crontabs/root 2>/dev/null", check=False)
         c.check("root crontab as in the snapshot", cron == snap["crontab"], cron)
         lst = vm.out("netstat -ltn 2>/dev/null | sort").splitlines()
         c.check("listening sockets as in the snapshot", lst == snap["listening"], sorted(set(lst) ^ set(snap["listening"])))
@@ -843,6 +844,34 @@ config service 'svcacme'
         c.check("back to the functional configuration", la and la["state"] == "applied", la and la.get("state"))
 
     return c.finish()
+
+
+@scenario
+def sync(vm, out, args):
+    """Development only: copy the checkout's service and LuCI files over the
+    installed ones. The final acceptance installs the built APKs instead."""
+    files = {
+        "haproxy-advanced/files/haproxy-advanced.init": ("/etc/init.d/haproxy-advanced", "755"),
+        "haproxy-advanced/files/haproxy-advanced-ctl": ("/usr/libexec/haproxy-advanced/ctl", "755"),
+        "luci-app-haproxy-advanced/root/usr/share/rpcd/ucode/luci.haproxy-advanced": ("/usr/share/rpcd/ucode/luci.haproxy-advanced", "644"),
+        "luci-app-haproxy-advanced/root/usr/share/rpcd/acl.d/luci-app-haproxy-advanced.json": ("/usr/share/rpcd/acl.d/luci-app-haproxy-advanced.json", "644"),
+        "luci-app-haproxy-advanced/root/usr/share/luci/menu.d/luci-app-haproxy-advanced.json": ("/usr/share/luci/menu.d/luci-app-haproxy-advanced.json", "644"),
+    }
+
+    for f in (ROOT / "haproxy-advanced/files/ucode").glob("*.uc"):
+        files[str(f.relative_to(ROOT))] = ("/usr/share/haproxy-advanced/" + f.name, "644")
+
+    for f in (ROOT / "luci-app-haproxy-advanced/htdocs/luci-static/resources").rglob("*.js"):
+        files[str(f.relative_to(ROOT))] = ("/www/luci-static/resources/" + str(f.relative_to(
+            ROOT / "luci-app-haproxy-advanced/htdocs/luci-static/resources")), "644")
+
+    for src, (dest, mode) in sorted(files.items()):
+        tmp = "%s/sync/%s" % (vmlib.STAGE, dest.replace("/", "_"))
+        vm.upload((ROOT / src).read_bytes(), tmp)
+        vm.run("cp %s %s && chmod %s %s" % (tmp, dest, mode, dest))
+
+    vm.run("rm -rf /tmp/luci-indexcache.* /tmp/luci-modulecache; /etc/init.d/rpcd reload", check=False)
+    print("synced %d files" % len(files))
 
 
 def main():

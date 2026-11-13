@@ -30,8 +30,12 @@ export function session_savedir(sid) {
 	return is_session_id(sid) ? `/var/run/rpcd/uci-${sid}` : null;
 };
 
+// A configuration UCI cannot parse comes back as one '__uci_error' section,
+// which the generator reports as an error instead of an empty configuration.
 function sections_of(c, conf) {
-	c.load(conf);
+	if (!c.load(conf))
+		return [ { '.type': '__uci_error', '.name': 'uci_error', '.index': 0,
+			message: `${c.error() ?? 'unknown error'} (run 'uci show ${conf}' to see the line)` } ];
 
 	let all = c.get_all(conf) ?? {};
 	let list = [];
@@ -238,7 +242,8 @@ export function ensure_run_dir() {
 export function haproxy_check(text) {
 	ensure_run_dir();
 
-	let tmp = `${RUN_DIR}/check-${time()}-${int(rand() * 1000000)}.cfg`;
+	let now = clock();
+	let tmp = `${RUN_DIR}/check-${now[0]}-${now[1]}.cfg`;
 
 	if (!fs.writefile(tmp, text))
 		return { ok: false, output: `cannot write ${tmp}: ${fs.error()}` };

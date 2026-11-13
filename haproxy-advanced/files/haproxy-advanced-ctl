@@ -186,4 +186,24 @@ if (!fn) {
 	exit(2);
 }
 
-exit(fn());
+// An internal error must not look like success or vanish: record it as a failed
+// apply, so LuCI shows it, and keep the running configuration.
+let rc;
+
+try {
+	rc = fn();
+}
+catch (e) {
+	let msg = `internal error in '${ARGV[0]}': ${e.message}`;
+
+	warn(`${msg}\n${e.stacktrace?.[0]?.context ?? ''}\n`);
+	log('err', msg);
+
+	if (ARGV[0] == 'apply')
+		sys.write_last_apply({ state: 'failed', errors: [ { where: 'haproxy-advanced', message: msg } ],
+			warnings: [], skipped: [], check: null, firewall: [], listeners: [] });
+
+	rc = 1;
+}
+
+exit(rc);

@@ -700,6 +700,11 @@ export function build(sections, env) {
 		push(by_type[t], s);
 	}
 
+	for (let s in (by_type.__uci_error ?? [])) {
+		err(rep, 'configuration', `/etc/config/haproxy-advanced cannot be read: ${s.message}`);
+		return { model: null, report: rep };
+	}
+
 	for (let t in LEGACY_TYPES) {
 		if (length(by_type[t] ?? [])) {
 			err(rep, 'configuration', `this is a version 0.1 configuration (it has '${t}' sections). ` +
