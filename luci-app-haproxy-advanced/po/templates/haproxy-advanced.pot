@@ -21,7 +21,7 @@ msgstr ""
 msgid "1-48 letters, digits, ., _ or -"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:148
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:74
 msgid "1-64 letters, digits, ., _, @ or -"
 msgstr ""
 
@@ -47,7 +47,7 @@ msgstr ""
 msgid "A certificate of the acme package. It overrides the certificate file."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:60
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:124
 msgid ""
 "A crypt hash made elsewhere: $6$ (SHA-512), $5$, $1$ or $2y$ (bcrypt). "
 "HAProxy checks the hash on every request that carries a login, so slow "
@@ -136,7 +136,7 @@ msgstr ""
 msgid "Add backend"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:116
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:42
 msgid "Add group"
 msgstr ""
 
@@ -162,7 +162,7 @@ msgstr ""
 msgid "Add service…"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:134
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:60
 msgid "Add user"
 msgstr ""
 
@@ -197,7 +197,7 @@ msgstr ""
 msgid "Answer"
 msgstr ""
 
-#: htdocs/luci-static/resources/haproxy_advanced/common.js:258
+#: htdocs/luci-static/resources/haproxy_advanced/common.js:278
 msgid "Any address (*)"
 msgstr ""
 
@@ -271,8 +271,6 @@ msgstr ""
 #: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:105
 #: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:189
 #: htdocs/luci-static/resources/view/haproxy-advanced/services.js:390
-#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:24
-#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:63
 msgid "Cancel"
 msgstr ""
 
@@ -425,7 +423,7 @@ msgstr ""
 #: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:43
 #: htdocs/luci-static/resources/view/haproxy-advanced/services.js:449
 #: htdocs/luci-static/resources/view/haproxy-advanced/services.js:618
-#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:137
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:63
 msgid "Enabled"
 msgstr ""
 
@@ -587,6 +585,10 @@ msgstr ""
 msgid "Generic HTTPS application"
 msgstr ""
 
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:105
+msgid "Give a new password or a hash, not both."
+msgstr ""
+
 #: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:95
 #: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:100
 #: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:82
@@ -597,7 +599,7 @@ msgstr ""
 msgid "Grant access to HAProxy Advanced"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:141
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:67
 msgid "Group"
 msgstr ""
 
@@ -605,7 +607,7 @@ msgstr ""
 msgid "Group %s"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:112
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:38
 msgid "Groups"
 msgstr ""
 
@@ -650,7 +652,7 @@ msgstr ""
 msgid "HAProxy Advanced: settings"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:109
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:35
 msgid "HAProxy Advanced: users"
 msgstr ""
 
@@ -823,6 +825,12 @@ msgstr ""
 msgid "Last check"
 msgstr ""
 
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:89
+msgid ""
+"Leave empty to keep the current password. Hashed (SHA-512 crypt) in this "
+"browser; only the hash is saved."
+msgstr ""
+
 #: htdocs/luci-static/resources/haproxy_advanced/common.js:149
 #: htdocs/luci-static/resources/view/haproxy-advanced/configuration.js:47
 msgid "Left out for now"
@@ -911,7 +919,7 @@ msgstr ""
 msgid "Login group"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:110
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:36
 msgid ""
 "Logins for services that require one (HTTP Basic authentication). A service "
 "names one group; any enabled user of that group may log in."
@@ -981,6 +989,10 @@ msgstr ""
 msgid "New listener…"
 msgstr ""
 
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:88
+msgid "New password"
+msgstr ""
+
 #: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:158
 msgid "No ACME certificate yet."
 msgstr ""
@@ -1010,7 +1022,7 @@ msgstr ""
 msgid "No login"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:88
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:14
 msgid "No password"
 msgstr ""
 
@@ -1074,6 +1086,10 @@ msgstr ""
 msgid "Optional; letters, digits and _."
 msgstr ""
 
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:123
+msgid "Or an existing hash"
+msgstr ""
+
 #: htdocs/luci-static/resources/view/haproxy-advanced/services.js:626
 msgid "Order"
 msgstr ""
@@ -1099,9 +1115,8 @@ msgid ""
 msgstr ""
 
 #: htdocs/luci-static/resources/view/haproxy-advanced/services.js:139
-#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:20
-#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:151
-#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:155
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:77
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:84
 msgid "Password"
 msgstr ""
 
@@ -1141,7 +1156,7 @@ msgstr ""
 msgid "Preset"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:118
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:44
 msgid "Prompt text"
 msgstr ""
 
@@ -1190,11 +1205,8 @@ msgstr ""
 msgid "Renew now"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:21
-msgid "Repeat"
-msgstr ""
-
 #: htdocs/luci-static/resources/view/haproxy-advanced/services.js:140
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:113
 msgid "Repeat password"
 msgstr ""
 
@@ -1315,17 +1327,12 @@ msgstr ""
 msgid "Set"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:92
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:18
 msgid "Set (%s)"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:18
-#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:48
-msgid "Set password"
-msgstr ""
-
-#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:157
-msgid "Set password…"
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:108
+msgid "Set a password."
 msgstr ""
 
 #: root/usr/share/luci/menu.d/luci-app-haproxy-advanced.json:51
@@ -1343,7 +1350,7 @@ msgstr ""
 msgid "Show ACME log"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:119
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:45
 msgid "Shown in the browser's login window."
 msgstr ""
 
@@ -1446,18 +1453,12 @@ msgid ""
 "stats password. HAProxy Advanced does not need it."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:19
-msgid ""
-"The password is turned into a SHA-512 crypt hash in this browser; only the "
-"hash is saved on the router."
-msgstr ""
-
 #: htdocs/luci-static/resources/view/haproxy-advanced/services.js:238
 msgid "The password needs at least 8 characters."
 msgstr ""
 
 #: htdocs/luci-static/resources/view/haproxy-advanced/services.js:240
-#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:33
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:120
 msgid "The passwords differ."
 msgstr ""
 
@@ -1481,7 +1482,7 @@ msgstr ""
 msgid "These settings cannot be applied:"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:70
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:133
 msgid "This is not a crypt hash."
 msgstr ""
 
@@ -1530,20 +1531,8 @@ msgid ""
 "Trusted networks must be IP addresses or networks such as 192.168.1.0/24."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:59
-msgid "Use an existing hash"
-msgstr ""
-
-#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:173
-msgid "Use an existing hash…"
-msgstr ""
-
-#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:31
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:102
 msgid "Use at least 8 characters."
-msgstr ""
-
-#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:79
-msgid "Use hash"
 msgstr ""
 
 #: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:137
@@ -1555,17 +1544,17 @@ msgstr ""
 msgid "Used only when all other servers are down."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:135
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:61
 msgid "User"
 msgstr ""
 
 #: htdocs/luci-static/resources/view/haproxy-advanced/services.js:138
-#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:145
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:71
 msgid "Username"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:123
-#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:130
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:49
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:56
 #: root/usr/share/luci/menu.d/luci-app-haproxy-advanced.json:39
 msgid "Users"
 msgstr ""
@@ -1711,6 +1700,6 @@ msgstr ""
 msgid "trusted networks"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:92
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:18
 msgid "unknown"
 msgstr ""

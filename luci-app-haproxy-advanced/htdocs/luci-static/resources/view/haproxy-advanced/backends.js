@@ -128,7 +128,7 @@ return view.extend({
 		o.editable = true;
 
 		o = s.taboption('general', form.ListValue, 'backend', _('Backend'));
-		common.names('backend').forEach((n) => o.value(n));
+		common.liveChoices(o, 'backend');
 		o.rmempty = false;
 
 		o = s.taboption('general', form.Value, 'name', _('Name'));

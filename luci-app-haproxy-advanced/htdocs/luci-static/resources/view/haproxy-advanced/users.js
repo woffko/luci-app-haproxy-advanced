@@ -2,84 +2,10 @@
 'require view';
 'require form';
 'require uci';
-'require ui';
 'require haproxy_advanced.common as common';
 'require haproxy_advanced.crypt as hacrypt';
 
 const HASH_RE = /^\$(1|5|6|2[aby])\$[A-Za-z0-9.\/$=]+$/;
-
-// Ask for a password twice and store its SHA-512 crypt hash. The password stays
-// in the browser.
-function passwordDialog(section_id, onDone) {
-	const p1 = E('input', { 'type': 'password', 'class': 'cbi-input-password', 'autocomplete': 'new-password' });
-	const p2 = E('input', { 'type': 'password', 'class': 'cbi-input-password', 'autocomplete': 'new-password' });
-	const err = E('p', { 'class': 'alert-message warning', 'style': 'display:none' });
-
-	ui.showModal(_('Set password'), [
-		E('p', _('The password is turned into a SHA-512 crypt hash in this browser; only the hash is saved on the router.')),
-		E('div', { 'class': 'cbi-value' }, [ E('label', { 'class': 'cbi-value-title' }, _('Password')), E('div', { 'class': 'cbi-value-field' }, p1) ]),
-		E('div', { 'class': 'cbi-value' }, [ E('label', { 'class': 'cbi-value-title' }, _('Repeat')), E('div', { 'class': 'cbi-value-field' }, p2) ]),
-		err,
-		E('div', { 'class': 'right' }, [
-			E('button', { 'class': 'btn', 'click': ui.hideModal }, _('Cancel')), ' ',
-			E('button', {
-				'class': 'btn cbi-button-positive',
-				'click': function() {
-					let problem = null;
-
-					if (p1.value.length < 8)
-						problem = _('Use at least 8 characters.');
-					else if (p1.value != p2.value)
-						problem = _('The passwords differ.');
-
-					if (problem) {
-						err.textContent = problem;
-						err.style.display = '';
-						return;
-					}
-
-					const hash = hacrypt.hash(p1.value);
-
-					p1.value = p2.value = '';
-					uci.set(common.CONFIG, section_id, 'password_hash', hash);
-					ui.hideModal();
-					onDone();
-				}
-			}, _('Set password'))
-		])
-	]);
-
-	p1.focus();
-}
-
-function hashDialog(section_id, onDone) {
-	const inp = E('input', { 'type': 'text', 'class': 'cbi-input-text', 'style': 'width:100%', 'placeholder': '$6$…' });
-	const err = E('p', { 'class': 'alert-message warning', 'style': 'display:none' });
-
-	ui.showModal(_('Use an existing hash'), [
-		E('p', _('A crypt hash made elsewhere: $6$ (SHA-512), $5$, $1$ or $2y$ (bcrypt). HAProxy checks the hash on every request that carries a login, so slow hashes such as bcrypt cost router CPU on every request.')),
-		inp, err,
-		E('div', { 'class': 'right' }, [
-			E('button', { 'class': 'btn', 'click': ui.hideModal }, _('Cancel')), ' ',
-			E('button', {
-				'class': 'btn cbi-button-positive',
-				'click': function() {
-					const v = inp.value.trim();
-
-					if (!HASH_RE.test(v) || v.length > 200) {
-						err.textContent = _('This is not a crypt hash.');
-						err.style.display = '';
-						return;
-					}
-
-					uci.set(common.CONFIG, section_id, 'password_hash', v);
-					ui.hideModal();
-					onDone();
-				}
-			}, _('Use hash'))
-		])
-	]);
-}
 
 function hashLabel(section_id) {
 	const h = uci.get(common.CONFIG, section_id, 'password_hash');
@@ -139,7 +65,7 @@ return view.extend({
 		o.editable = true;
 
 		o = s.option(form.ListValue, 'group', _('Group'));
-		common.names('auth_group').forEach((n) => o.value(n));
+		common.liveChoices(o, 'auth_group');
 		o.rmempty = false;
 
 		o = s.option(form.Value, 'username', _('Username'));
@@ -152,28 +78,59 @@ return view.extend({
 		o.textvalue = hashLabel;
 		o.modalonly = false;
 
-		o = s.option(form.Button, '_setpw', _('Password'));
+		// Password fields inside the user editor. The hash is made in this browser
+		// when the editor is saved (decision D6); the password itself is never
+		// stored or sent. LuCI has one modal, so no nested dialog is used here.
+		o = s.option(form.DummyValue, '_current', _('Password'));
 		o.modalonly = true;
-		o.inputtitle = _('Set password…');
-		o.inputstyle = 'action';
-		o.onclick = function(ev, section_id) {
-			const root = ev.target.closest('.cbi-value-field') || ev.target.parentNode;
-			const label = root.querySelector('.ha-hash-label');
+		o.textvalue = hashLabel;
 
-			passwordDialog(section_id, () => { if (label) label.textContent = hashLabel(section_id); });
+		o = s.option(form.Value, '_newpw', _('New password'),
+			_('Leave empty to keep the current password. Hashed (SHA-512 crypt) in this browser; only the hash is saved.'));
+		o.modalonly = true;
+		o.password = true;
+		o.cfgvalue = () => '';
+		o.remove = () => {};
+		o.write = function(section_id, value) {
+			if (value)
+				uci.set(common.CONFIG, section_id, 'password_hash', hacrypt.hash(value));
 		};
-		o.renderWidget = function(section_id, option_index, cfgvalue) {
-			const btn = form.Button.prototype.renderWidget.apply(this, [ section_id, option_index, cfgvalue ]);
-			const paste = E('button', {
-				'class': 'btn cbi-button',
-				'click': (ev) => {
-					ev.preventDefault();
-					hashDialog(section_id, () => { label.textContent = hashLabel(section_id); });
-				}
-			}, _('Use an existing hash…'));
-			const label = E('span', { 'class': 'ha-hash-label', 'style': 'margin-left:1em' }, hashLabel(section_id));
+		o.validate = function(section_id, value) {
+			const hash = this.section.formvalue(section_id, '_hash');
 
-			return E('div', {}, [ btn, ' ', paste, label ]);
+			if (value && value.length < 8)
+				return _('Use at least 8 characters.');
+
+			if (value && hash)
+				return _('Give a new password or a hash, not both.');
+
+			if (!value && !hash && !uci.get(common.CONFIG, section_id, 'password_hash'))
+				return _('Set a password.');
+
+			return true;
+		};
+
+		o = s.option(form.Value, '_newpw2', _('Repeat password'));
+		o.modalonly = true;
+		o.password = true;
+		o.cfgvalue = () => '';
+		o.remove = () => {};
+		o.write = () => {};
+		o.validate = function(section_id, value) {
+			return ((value || '') == (this.section.formvalue(section_id, '_newpw') || '')) ? true : _('The passwords differ.');
+		};
+
+		o = s.option(form.Value, '_hash', _('Or an existing hash'),
+			_('A crypt hash made elsewhere: $6$ (SHA-512), $5$, $1$ or $2y$ (bcrypt). HAProxy checks the hash on every request that carries a login, so slow hashes such as bcrypt cost router CPU on every request.'));
+		o.modalonly = true;
+		o.cfgvalue = () => '';
+		o.remove = () => {};
+		o.write = function(section_id, value) {
+			if (value)
+				uci.set(common.CONFIG, section_id, 'password_hash', value.trim());
+		};
+		o.validate = function(section_id, value) {
+			return (!value || (HASH_RE.test(value.trim()) && value.length <= 200)) ? true : _('This is not a crypt hash.');
 		};
 
 		return m.render();

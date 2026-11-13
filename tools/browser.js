@@ -44,7 +44,7 @@ function field(page, label) {
 
 async function modalSave(page) {
 	await page.locator('.modal .cbi-button-positive', { hasText: /^Save$/ }).click();
-	await page.waitForSelector('.modal', { state: 'detached', timeout: 15000 });
+	await page.waitForSelector('.modal', { state: 'hidden', timeout: 15000 });
 }
 
 // Save & Apply in the page footer, then wait for LuCI's reload and for the
@@ -138,15 +138,11 @@ const steps = {
 
 	async password(page) {
 		await open(page, 'users');
-		const row = page.locator('.cbi-section[id*="user"] tr.cbi-section-table-row').filter({ hasText: 'bob' });
+		const row = page.locator('tr.cbi-section-table-row').filter({ hasText: 'bob' });
 		await row.locator('.cbi-button-edit').click();
 		await page.waitForSelector('.modal');
-		await page.locator('.modal button', { hasText: 'Set password…' }).click();
-		const inputs = page.locator('.modal input[type=password]');
-		await inputs.nth(0).fill('browser-pass-2');
-		await inputs.nth(1).fill('browser-pass-2');
-		await page.locator('.modal button.cbi-button-positive', { hasText: 'Set password' }).click();
-		await page.waitForTimeout(500);
+		await field(page, 'New password').locator('input').fill('browser-pass-2');
+		await field(page, 'Repeat password').locator('input').fill('browser-pass-2');
 		await shot(page, 'password-set');
 		await modalSave(page);
 		const note = await saveApply(page);
@@ -178,7 +174,7 @@ const steps = {
 		await page.locator('tr[data-sid="pub"] .cbi-button-edit').click();
 		await page.waitForSelector('.modal');
 		await page.locator('.modal a', { hasText: /^Firewall$/ }).click();
-		await page.locator('.modal input[type=checkbox][id*="firewall"]').first().uncheck();
+		await field(page, 'Open in firewall').locator('input[type=checkbox]').uncheck();
 		await modalSave(page);
 		const note = await saveApply(page);
 
@@ -190,7 +186,7 @@ const steps = {
 		await page.locator('tr[data-sid="pub"] .cbi-button-edit').click();
 		await page.waitForSelector('.modal');
 		await page.locator('.modal a', { hasText: /^Firewall$/ }).click();
-		await page.locator('.modal input[type=checkbox][id*="firewall"]').first().check();
+		await field(page, 'Open in firewall').locator('input[type=checkbox]').check();
 		await modalSave(page);
 		const note = await saveApply(page);
 
@@ -229,7 +225,7 @@ const steps = {
 
 	async legacy(page) {
 		await open(page, 'overview');
-		await page.locator('.alert-message', { hasText: 'version 0.1 configuration' }).waitFor({ timeout: 10000 });
+		await page.locator('.alert-message', { hasText: 'version 0.1 configuration' }).first().waitFor({ timeout: 10000 });
 		await shot(page, 'legacy-notice');
 		await page.locator('button', { hasText: 'Move it to /etc/config/haproxy-advanced.v01' }).click();
 		await page.waitForTimeout(3000);
@@ -241,7 +237,9 @@ const steps = {
 
 		fs.writeFileSync(path.join(outDir, 'russian.txt'), text);
 		assert.match(text, /Обзор/);
-		assert.match(text, /Сервисы/);
+		assert.match(text, /Службы|Сервисы/);
+		assert.match(text, /Последнее применение/);
+		assert.doesNotMatch(text, /запущенвключён/);
 		await shot(page, 'russian-overview');
 		await open(page, 'services');
 		await shot(page, 'russian-services');
@@ -277,6 +275,16 @@ const steps = {
 	const errors = [];
 
 	page.on('pageerror', (e) => errors.push(String(e)));
+	page.on('response', async (r) => {
+		if (r.status() >= 400)
+			errors.push(`HTTP ${r.status()} ${r.url()} ${(r.request().postData() || '').substring(0, 300)}`);
+		else if (/\/ubus/.test(r.url())) {
+			const body = await r.text().catch(() => '');
+
+			if (/"error"\s*:/.test(body))
+				errors.push(`RPC ${page.url()} ${(r.request().postData() || '').substring(0, 400)} -> ${body.substring(0, 300)}`);
+		}
+	});
 	page.on('console', (m) => { if (m.type() == 'error') errors.push(m.text()); });
 
 	try {

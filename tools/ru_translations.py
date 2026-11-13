@@ -424,4 +424,10 @@ RU = {
 "staging": "staging",
 "trusted networks": "доверенные сети",
 "unknown": "неизвестно",
+"Give a new password or a hash, not both.": "Укажите либо новый пароль, либо хеш, но не оба сразу.",
+"Leave empty to keep the current password. Hashed (SHA-512 crypt) in this browser; only the hash is saved.":
+ "Оставьте пустым, чтобы сохранить текущий пароль. Хешируется (SHA-512 crypt) в этом браузере; сохраняется только хеш.",
+"New password": "Новый пароль",
+"Or an existing hash": "Или готовый хеш",
+"Set a password.": "Задайте пароль.",
 }

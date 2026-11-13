@@ -38,7 +38,7 @@ function legacy_present(sections) {
 // "Not After" of a certificate HAProxy has loaded, as a Unix time.
 function cert_expiry(path) {
 	let out = sys.stats_command(`show ssl cert ${path}`);
-	let m = match(out ?? '', /Not After: ([^\n]+)/);
+	let m = match(out ?? '', /notAfter: ([^\n]+)/i);
 
 	if (!m)
 		return null;

@@ -180,7 +180,7 @@ return view.extend({
 		if (stock.installed && (stock.enabled || stock.running))
 			nodes.push(E('div', { 'class': 'alert-message notice' }, [
 				E('p', {}, _('The haproxy package\'s own service (/etc/init.d/haproxy) is %s. Its sample configuration listens on ports 81, 444 and 60000 as root, with a well-known stats password. HAProxy Advanced does not need it.')
-					.format([ stock.running ? _('running') : null, stock.enabled ? _('enabled at boot') : null ].filter((x) => x).join(_(' and ')))),
+					.format([ stock.running ? _('running') : null, stock.enabled ? _('enabled at boot') : null ].filter((x) => x).join(' ' + _('and') + ' '))),
 				E('button', {
 					'class': 'btn cbi-button-negative',
 					'click': ui.createHandlerFn(this, () => ui.showModal(_('Stop the stock HAProxy service?'), [

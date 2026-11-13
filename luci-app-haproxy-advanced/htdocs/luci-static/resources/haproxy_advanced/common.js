@@ -204,6 +204,26 @@ return baseclass.extend({
 		return uci.sections(CONFIG, type).map((s) => s['.name']);
 	},
 
+	// Fill a ListValue with the current section names of a type every time it is
+	// rendered, after the choices it already has. Names fixed at page load would
+	// miss sections added since (for example by the "Add service" dialog), and a
+	// ListValue whose value is not a choice silently shows and saves another one.
+	liveChoices: function(o, type) {
+		const fixed = (o.keylist || []).map((k, i) => [ k, o.vallist[i] ]);
+		const render = o.renderWidget;
+
+		o.renderWidget = function() {
+			this.keylist = [];
+			this.vallist = [];
+			fixed.forEach((f) => this.value(f[0], f[1]));
+			uci.sections(CONFIG, type).forEach((s) => this.value(s['.name']));
+
+			return render.apply(this, arguments);
+		};
+
+		uci.sections(CONFIG, type).forEach((s) => o.value(s['.name']));
+	},
+
 	// A section name that no section of the configuration uses yet.
 	uniqueName: function(base) {
 		base = String(base || 'item').replace(/[^A-Za-z0-9_]/g, '_').replace(/^_+|_+$/g, '').substring(0, 40) || 'item';

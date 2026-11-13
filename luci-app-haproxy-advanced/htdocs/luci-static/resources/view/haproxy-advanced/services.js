@@ -457,7 +457,7 @@ return view.extend({
 		o.textvalue = (sid) => L.toArray(uci.get(common.CONFIG, sid, 'hostname')).join(', ');
 
 		o = s.taboption('general', form.ListValue, 'listener', _('Listener'));
-		common.names('listener').forEach((n) => o.value(n));
+		common.liveChoices(o, 'listener');
 		o.rmempty = false;
 
 		o = s.taboption('general', form.ListValue, 'mode', _('Mode'),
@@ -467,7 +467,7 @@ return view.extend({
 		o.default = 'http';
 
 		o = s.taboption('general', form.ListValue, 'backend', _('Backend'));
-		common.names('backend').forEach((n) => o.value(n));
+		common.liveChoices(o, 'backend');
 		o.rmempty = false;
 
 		o = s.taboption('tls', form.ListValue, 'acme_cert', _('ACME certificate'),
@@ -547,7 +547,7 @@ return view.extend({
 		o = s.taboption('auth', form.ListValue, 'auth_group', _('Login group'),
 			_('Ask for a login of a user of this group (Users tab).'));
 		o.value('', _('No login'));
-		common.names('auth_group').forEach((n) => o.value(n));
+		common.liveChoices(o, 'auth_group');
 		o.depends('mode', 'http');
 		o.modalonly = true;
 
@@ -620,7 +620,7 @@ return view.extend({
 		o.editable = true;
 
 		o = s.option(form.ListValue, 'service', _('Service'));
-		common.names('service').forEach((n) => o.value(n));
+		common.liveChoices(o, 'service');
 		o.rmempty = false;
 
 		o = s.option(form.Value, 'order', _('Order'));
@@ -651,7 +651,7 @@ return view.extend({
 
 		o = s.option(form.ListValue, 'auth_group', _('Login group'));
 		o.value('', _('The service\'s group'));
-		common.names('auth_group').forEach((n) => o.value(n));
+		common.liveChoices(o, 'auth_group');
 		o.depends('action', 'auth');
 		o.modalonly = true;
 

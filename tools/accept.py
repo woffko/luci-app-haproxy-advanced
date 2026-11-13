@@ -749,8 +749,10 @@ PEBBLE_CONFIG = """{
 
 def ubuntu_start(ub, name, command):
     """Start a background process on the Ubuntu VM in its own session."""
-    ub.run("cd %s && setsid nohup %s > %s.log 2>&1 < /dev/null & echo $! > %s/%s.pid" % (
-        vmlib.UBUNTU_DIR, command, name, vmlib.UBUNTU_DIR, name), timeout=20)
+    # setsid -f returns at once; the child writes its own pid before exec, so
+    # the ssh session does not wait for it.
+    ub.run("cd %s && setsid -f sh -c 'echo $$ > %s/%s.pid; exec %s > %s.log 2>&1 < /dev/null'" % (
+        vmlib.UBUNTU_DIR, vmlib.UBUNTU_DIR, name, command.replace("'", "'\\''"), name), timeout=20)
 
 
 def ubuntu_stop(ub, name):
