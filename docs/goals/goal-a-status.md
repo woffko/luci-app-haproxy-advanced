@@ -7,14 +7,14 @@ Task: `docs/goals/goal-a-task.md`. Branch `goal-a`.
 | Stage | State |
 |---|---|
 | 1. Layout and packaging | done: two packages build in the dedicated tree |
-| 2. Schema and generator | in progress |
-| 3. The service | in progress |
-| 4. Safe defaults | in progress |
-| 5. The GUI | in progress |
-| 6. The extras | in progress |
-| 7. Documentation | not started |
-| Tests | in progress |
-| VM acceptance | not started |
+| 2. Schema and generator | written, host tests pass; VM check pending |
+| 3. The service | written; VM check pending |
+| 4. Safe defaults | written; VM check pending |
+| 5. The GUI | written, Russian translation done; browser check pending |
+| 6. The extras | written; VM check pending |
+| 7. Documentation | README and schema written; testing.md, CHANGELOG pending |
+| Tests | 25 golden fixtures pass, 32/32 mutations caught, crypt vectors pass |
+| VM acceptance | tools written; waiting for the OpenWrt VM password from the owner |
 
 ## Stage 1: layout and packaging
 
@@ -53,9 +53,39 @@ luci-app-haproxy-advanced 0.2.0-r1
   LuCI caches and runs `/etc/init.d/rpcd reload`. There is no uci-defaults script.
 - `AGENTS.md` added, with the Longrun section of `/home/w0w/AGENTS.md`.
 
+## Host tests
+
+- `tests/run.uc`: 25 fixtures, all pass with the tree's host ucode
+  (`staging_dir/hostpkg/bin/ucode`, built with UCI_SUPPORT=OFF, so fixtures are read
+  by `tests/lib/uci.uc`).
+- `tests/mutations.py`: 32 mutations of the access policy and its checks, 32 caught.
+  The first run caught 31; "ambiguous paths only with hardening" survived until the
+  fixture `paths_without_hardening` was added.
+- `tests/syntax.sh`: the ctl and the rpcd plugin (with every module they import)
+  compile with stub `uci`, `ubus` and `socket` modules.
+- `tests/js/crypt.test.js`: SHA-512 against Node for 13 lengths and the seven `$6$`
+  vectors of Drepper's specification.
+- shellcheck is not installed on the host; `sh -n` passes and CI runs shellcheck.
+
 ## Decisions taken during the goal
 
-(none yet)
+- Problems of backends and auth groups count only when a service uses them, and
+  disabled sections are not validated, so an unused or disabled section with a typo
+  cannot block an apply. Unused sections with problems get one warning each.
+- Deny lists (blocked, internal-only, deny and auth rules) compare the decoded,
+  lower-cased path without `;` parameters; allow lists (public paths, allow rules)
+  compare the decoded path case-sensitively, so neither form can be bypassed by case
+  or parameters. Ambiguous paths are denied for every service with path lists,
+  hardening or not.
+- The login check runs `http_auth` once per request and only when an
+  `Authorization` header is present (result kept in a transaction variable); failed
+  logins are counted before the check, so guessing costs at most the limit's number of
+  hash checks per minute.
+- A TLS listener whose services all wait for certificates keeps its HTTP companion
+  running, so ACME HTTP-01 can issue the missing certificate.
+- The Ubuntu VM's Pebble comes from Ubuntu's archive (`apt-get download pebble`,
+  2.3.1+ds-1, SHA256 f1597a5a…0ba matches the signed index), unpacked under
+  `~/haproxy-advanced-test`; nothing installed system-wide.
 
 ## Open questions
 
