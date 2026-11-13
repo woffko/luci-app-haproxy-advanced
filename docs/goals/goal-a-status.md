@@ -13,7 +13,7 @@ Task: `docs/goals/goal-a-task.md`. Branch `goal-a`.
 | 5. The GUI | written, Russian translation done; browser check pending |
 | 6. The extras | written; VM check pending |
 | 7. Documentation | README, schema, testing.md and CHANGELOG written; measurements pending |
-| Tests | 25 golden fixtures pass, 32/32 mutations caught, crypt vectors pass; CI green (run 43370407245) |
+| Tests | 25 golden fixtures pass, 34/34 mutations caught, crypt vectors pass, 21/21 golden configs pass `haproxy -c` 3.2.15 without warnings; CI green |
 | VM acceptance | tools written; waiting for the OpenWrt VM password from the owner |
 
 ## Stage 1: layout and packaging
@@ -86,6 +86,25 @@ luci-app-haproxy-advanced 0.2.0-r1
 - The Ubuntu VM's Pebble comes from Ubuntu's archive (`apt-get download pebble`,
   2.3.1+ds-1, SHA256 f1597a5a…0ba matches the signed index), unpacked under
   `~/haproxy-advanced-test`; nothing installed system-wide.
+
+## haproxy -c before the OpenWrt VM (Ubuntu VM)
+
+While the OpenWrt VM password was pending, OpenWrt's own HAProxy (feed package
+haproxy-ssl 3.2.15-1 of the 25.12.4 tree, built in the dedicated tree) ran on the
+Ubuntu VM through the musl loader, nothing installed (`tools/golden_ubuntu.sh`).
+It checked every golden configuration with `haproxy -c`:
+
+- run 1: 20 of 21 valid. Found three generator bugs the host tests could not see:
+  an empty `request_header` value rendered as `set-header X ""` (an error); `option
+  httplog`/`tcplog` with `log_requests none` (warning: no log address); stick-table
+  backends without `from` mixed implicit and explicit defaults (warning).
+- run 2: 21 of 21 valid; one more warning showed a real bug: a service's advanced
+  `http-response` lines were conditioned on the request's Host, which a response rule
+  cannot see, so they never applied. They are now conditioned on the transaction
+  variable `txn.ha_svc`, like HSTS.
+- run 3: 21 of 21 valid, no warning in any configuration.
+
+Two mutations were added for these rules (34 in all, all caught).
 
 ## CI
 

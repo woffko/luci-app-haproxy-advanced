@@ -84,7 +84,7 @@ Two listeners never share an address and port.
 | `hsts_max_age` | integer | 31536000 | |
 | `hsts_subdomains` | 0/1 | 0 | Add `includeSubDomains`. |
 | `timeout_client` | time | inherit | |
-| `request_header` | list of `Name: value` | | Headers set on requests to the backend. |
+| `request_header` | list of `Name: value` | | Headers set on requests to the backend; an empty value (`Name:`) removes the header. |
 | `advanced` | text | | Extra `http-request` or `http-response` rules without a condition; the generator limits them to this service. |
 
 Path prefixes are decoded paths (`/my files/` is written as it reads, not

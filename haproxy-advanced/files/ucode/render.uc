@@ -90,6 +90,21 @@ function auth_lines(out, svc, group, cond, realm, count_failures) {
 	push(out, `    http-request auth realm "${realm}" if ${cond} !{ var(${v}) -m bool }`);
 }
 
+function is_response_line(line) {
+	return !!match(line, /^http-(after-)?response[ \t]/);
+}
+
+function needs_svc_var(svc, proto) {
+	if (svc.hsts && proto == 'https')
+		return true;
+
+	for (let line in svc.advanced)
+		if (is_response_line(line))
+			return true;
+
+	return false;
+}
+
 // The ACLs and http-request rules of the HTTP services of one frontend.
 function http_service_block(out, m, l, svcs, proto) {
 	let g = m.global;
@@ -132,10 +147,11 @@ function http_service_block(out, m, l, svcs, proto) {
 
 	push(out, `    http-request deny deny_status 404 if ${join(' ', map(svcs, (s) => '!host_' + s.name))}`);
 
-	if (any_hsts)
-		for (let svc in svcs)
-			if (svc.hsts)
-				push(out, `    http-request set-var(txn.ha_svc) str(${svc.name}) if host_${svc.name}`);
+	// Response-side rules cannot see the request's Host header, so services
+	// that have any (HSTS, advanced http-response lines) mark the transaction.
+	for (let svc in svcs)
+		if (needs_svc_var(svc, proto))
+			push(out, `    http-request set-var(txn.ha_svc) str(${svc.name}) if host_${svc.name}`);
 
 	for (let svc in svcs) {
 		let n = svc.name;
@@ -156,8 +172,13 @@ function http_service_block(out, m, l, svcs, proto) {
 			push(out, `    http-request set-header X-Forwarded-Port ${l.port} if ${h}`);
 		}
 
-		for (let hd in svc.headers)
-			push(out, `    http-request set-header ${hd.name} "${hd.value}" if ${h}`);
+		// An empty value removes the header: HAProxy cannot set an empty one.
+		for (let hd in svc.headers) {
+			if (hd.value == '')
+				push(out, `    http-request del-header ${hd.name} if ${h}`);
+			else
+				push(out, `    http-request set-header ${hd.name} "${hd.value}" if ${h}`);
+		}
 
 		if (svc.timeout_client != null)
 			push(out, `    http-request set-timeout client ${svc.timeout_client} if ${h}`);
@@ -198,8 +219,12 @@ function http_service_block(out, m, l, svcs, proto) {
 			auth_lines(out, svc, svc.auth_group, h, m.groups[svc.auth_group].realm,
 				svc.auth_fail_limit > 0);
 
-		for (let line in svc.advanced)
-			push(out, `    ${line} if ${h}`);
+		for (let line in svc.advanced) {
+			if (is_response_line(line))
+				push(out, `    ${line} if { var(txn.ha_svc) -m str ${n} }`);
+			else
+				push(out, `    ${line} if ${h}`);
+		}
 	}
 
 	if (any_hsts) {
@@ -431,15 +456,24 @@ export function render(m) {
 		`    timeout server ${g.timeout_server}`,
 		'    default-server init-addr last,libc,none');
 
-	push(out, '', 'defaults ha_http', '    mode http', ...common,
-		'    option httplog',
+	let logging = (g.log_requests != 'none');
+
+	push(out, '', 'defaults ha_http', '    mode http', ...common);
+
+	if (logging)
+		push(out, '    option httplog');
+
+	push(out,
 		`    timeout http-request ${g.timeout_http_request}`,
 		`    timeout http-keep-alive ${g.timeout_http_keep_alive}`);
 
 	if (g.log_requests == 'errors')
 		push(out, '    option dontlog-normal', '    option log-separate-errors');
 
-	push(out, '', 'defaults ha_tcp', '    mode tcp', ...common, '    option tcplog');
+	push(out, '', 'defaults ha_tcp', '    mode tcp', ...common);
+
+	if (logging)
+		push(out, '    option tcplog');
 
 	if (g.log_requests == 'errors')
 		push(out, '    option dontlog-normal');
@@ -457,11 +491,11 @@ export function render(m) {
 
 	for (let svc in m.services) {
 		if (svc.mode == 'passthrough' && svc.conn_rate_limit > 0) {
-			push(out, '', `backend st_${svc.name}`);
+			push(out, '', `backend st_${svc.name} from ha_tcp`);
 			push(out, '    stick-table type ipv6 size 100k expire 10m store conn_rate(10s)');
 		}
 		else if (svc.mode == 'http' && needs_table(svc)) {
-			push(out, '', `backend st_${svc.name}`);
+			push(out, '', `backend st_${svc.name} from ha_tcp`);
 			push(out, '    stick-table type ipv6 size 100k expire 10m store http_req_rate(10s),gpc(1),gpc_rate(1,1m)');
 		}
 	}

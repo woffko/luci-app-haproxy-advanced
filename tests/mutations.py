@@ -89,6 +89,10 @@ MUTATIONS = [
     ("blocked paths skipped for trusted networks",
      R, "\t\tif (length(svc.blocked))\n\t\t\tpush(out, `    http-request deny deny_status 403 if ${h} blocked_${n}`);\n",
      "\t\tif (length(svc.blocked))\n\t\t\tpush(out, `    http-request deny deny_status 403 if ${h} blocked_${n}${length(svc.trusted) ? ' !trusted_' + n : ''}`);\n"),
+    ("response rules conditioned on the request host",
+     R, "push(out, `    ${line} if { var(txn.ha_svc) -m str ${n} }`);", "push(out, `    ${line} if ${h}`);"),
+    ("empty request header written as an empty value",
+     R, "push(out, `    http-request del-header ${hd.name} if ${h}`);", "push(out, `    http-request set-header ${hd.name} \"\" if ${h}`);"),
 ]
 
 
