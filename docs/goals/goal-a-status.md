@@ -12,8 +12,8 @@ Task: `docs/goals/goal-a-task.md`. Branch `goal-a`.
 | 4. Safe defaults | written; VM check pending |
 | 5. The GUI | written, Russian translation done; browser check pending |
 | 6. The extras | written; VM check pending |
-| 7. Documentation | README and schema written; testing.md, CHANGELOG pending |
-| Tests | 25 golden fixtures pass, 32/32 mutations caught, crypt vectors pass |
+| 7. Documentation | README, schema, testing.md and CHANGELOG written; measurements pending |
+| Tests | 25 golden fixtures pass, 32/32 mutations caught, crypt vectors pass; CI green (run 43370407245) |
 | VM acceptance | tools written; waiting for the OpenWrt VM password from the owner |
 
 ## Stage 1: layout and packaging
@@ -87,6 +87,22 @@ luci-app-haproxy-advanced 0.2.0-r1
   2.3.1+ds-1, SHA256 f1597a5a…0ba matches the signed index), unpacked under
   `~/haproxy-advanced-test`; nothing installed system-wide.
 
+## CI
+
+- Run 43370201434 failed on shellcheck of `tests/syntax.sh`: the `-L` stub pattern
+  was unquoted, so the shell globbed it and the stubs were never resolved as modules.
+  Fixed in 3ffac02; run 43370407245 is green (ucode built at 85922056, golden tests,
+  mutation pass, compile check, crypt vectors, JavaScript syntax, shellcheck, JSON).
+
 ## Open questions
 
-(none yet)
+- **Blocker: the OpenWrt test VM's root password.** The task says the owner gives it
+  in chat. It was asked for on 2026-11-13 and has not arrived yet, so no VM
+  acceptance has run: no `haproxy -c` of the golden configurations, no request
+  through HAProxy, no browser step. The project-memory store of cake-autorate-rs holds
+  12 encrypted test assets, possibly this password; they belong to another project and
+  were not used without the owner's word.
+- Consent for the shared VMs: all nine other sessions answered on 2026-11-13 that
+  they do not use 192.168.189.130 or 192.168.189.142 (luci-app-kea: keep Kea
+  disabled on .130; neuroguard: leave 192.168.189.146 alone). The one VM reboot the
+  task allows needs a separate question when it comes.
