@@ -252,8 +252,12 @@ const OWNED_GLOBAL = [ 'daemon', 'master-worker', 'user', 'group', 'uid', 'gid',
 	'pidfile', 'log-tag', 'nbproc' ];
 
 export function check_advanced_line(line, where) {
-	if (match(line, /[\x00-\x08\x0a-\x1f\x7f`]/))
-		return 'control characters are not allowed';
+	for (let i = 0; i < length(line); i++) {
+		let c = ord(line, i);
+
+		if ((c < 32 && c != 9) || c == 127 || c == 96)
+			return 'control characters and backticks are not allowed';
+	}
 
 	let words = split(line, /[ \t]+/);
 	let kw = lc(words[0] ?? '');

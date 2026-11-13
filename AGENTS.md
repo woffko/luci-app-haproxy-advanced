@@ -36,7 +36,7 @@ Packaging needs fakeroot and runs outside any sandbox. Do not touch the tree's
 UCODE=/home/w0w/build/openwrt-25.12.4-clean-haproxy-luci/staging_dir/hostpkg/bin/ucode
 $UCODE tests/run.uc              # golden tests; UPDATE=1 rewrites expected files
 UCODE=$UCODE tests/syntax.sh     # compile every ucode file
-UCODE=$UCODE tests/mutations.sh  # access-policy mutations must all fail a test
+UCODE=$UCODE python3 -I tests/mutations.py  # every access-policy mutation must fail a test
 node tests/js/crypt.test.js      # browser-side SHA-512 crypt
 shellcheck -s sh haproxy-advanced/files/haproxy-advanced.init
 ```

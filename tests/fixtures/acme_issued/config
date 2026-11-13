@@ -1,0 +1,22 @@
+config global 'global'
+	option enabled '1'
+
+config listener 'pub'
+	list address 'wan'
+	option port '8443'
+	option redirect_port '8080'
+
+config service 'nas'
+	option listener 'pub'
+	list hostname 'nas.example.com'
+	option backend 'nas'
+	option acme_cert 'nas'
+
+config backend 'nas'
+
+config server
+	option backend 'nas'
+	option name 'n'
+	option address '192.168.1.2'
+	option port '443'
+	option tls '1'

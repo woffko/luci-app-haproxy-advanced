@@ -1,0 +1,20 @@
+{
+  "ok": true,
+  "errors": [
+  ],
+  "warnings": [
+  ],
+  "skipped": [
+  ],
+  "firewall": [
+    {
+      "listener": "edge",
+      "zone": "wan",
+      "port": 443,
+      "family": "any"
+    }
+  ],
+  "interfaces": [
+    "wan"
+  ]
+}

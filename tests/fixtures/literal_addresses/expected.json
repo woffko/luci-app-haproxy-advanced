@@ -1,0 +1,18 @@
+{
+  "ok": true,
+  "errors": [
+  ],
+  "warnings": [
+    {
+      "where": "listener multi",
+      "message": "address 203.0.113.10 appears twice; it is bound once"
+    }
+  ],
+  "skipped": [
+  ],
+  "firewall": [
+  ],
+  "interfaces": [
+    "wan"
+  ]
+}

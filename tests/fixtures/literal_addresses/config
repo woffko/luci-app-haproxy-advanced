@@ -1,0 +1,43 @@
+config global 'global'
+	option enabled '1'
+
+config listener 'multi'
+	list address '203.0.113.10'
+	list address 'wan'
+	list address '2001:db8::99'
+	option family 'any'
+	option port '443'
+
+config listener 'v6any'
+	option family 'ipv6'
+	option port '8443'
+
+config listener 'v4v6any'
+	option family 'any'
+	option port '9443'
+
+config service 'a'
+	option listener 'multi'
+	list hostname 'a.example.com'
+	option backend 'b'
+	option certificate '/c/a.pem'
+
+config service 'b'
+	option listener 'v6any'
+	list hostname 'b.example.com'
+	option backend 'b'
+	option certificate '/c/a.pem'
+
+config service 'c'
+	option listener 'v4v6any'
+	list hostname 'c.example.com'
+	option backend 'b'
+	option certificate '/c/a.pem'
+
+config backend 'b'
+
+config server
+	option backend 'b'
+	option name 's'
+	option address '192.168.1.2'
+	option port '80'

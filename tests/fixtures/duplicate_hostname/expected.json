@@ -1,0 +1,17 @@
+{
+  "ok": false,
+  "errors": [
+    {
+      "where": "service b",
+      "message": "hostname 'x.example.com' is also used by service 'a' on listener 'pub'"
+    }
+  ],
+  "warnings": [
+  ],
+  "skipped": [
+  ],
+  "firewall": [
+  ],
+  "interfaces": [
+  ]
+}

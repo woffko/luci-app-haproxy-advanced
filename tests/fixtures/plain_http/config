@@ -1,0 +1,22 @@
+config global 'global'
+	option enabled '1'
+
+config listener 'lanhttp'
+	list address 'lan'
+	option port '8080'
+	option tls '0'
+
+config service 'wiki'
+	option listener 'lanhttp'
+	list hostname 'wiki.lan'
+	option backend 'wiki'
+	option certificate '/etc/haproxy/certs/wiki.pem'
+	option hsts '1'
+
+config backend 'wiki'
+
+config server
+	option backend 'wiki'
+	option name 'w'
+	option address '192.168.1.30'
+	option port '80'

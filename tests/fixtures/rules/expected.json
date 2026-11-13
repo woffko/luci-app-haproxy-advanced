@@ -1,0 +1,17 @@
+{
+  "ok": true,
+  "errors": [
+  ],
+  "warnings": [
+    {
+      "where": "rule #5 of service app",
+      "message": "the rule has no criteria and matches every request"
+    }
+  ],
+  "skipped": [
+  ],
+  "firewall": [
+  ],
+  "interfaces": [
+  ]
+}

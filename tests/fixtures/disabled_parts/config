@@ -1,0 +1,45 @@
+config global 'global'
+	option enabled '1'
+
+config listener 'off'
+	option enabled '0'
+	option port '443'
+
+config listener 'on'
+	option port '8443'
+
+config service 'a'
+	option listener 'off'
+	list hostname 'a.example.com'
+	option backend 'b'
+
+config service 'broken_but_disabled'
+	option enabled '0'
+	option listener 'nowhere'
+	list hostname 'not a host'
+
+config service 'c'
+	option listener 'on'
+	list hostname 'c.example.com'
+	option backend 'b'
+	option certificate '/c/a.pem'
+	option auth_group 'empty'
+
+config backend 'b'
+
+config server
+	option backend 'b'
+	option name 's'
+	option enabled '0'
+	option address 'invalid address'
+
+config backend 'unused'
+	option balance 'nonsense'
+
+config auth_group 'empty'
+
+config user
+	option group 'empty'
+	option username 'gone'
+	option enabled '0'
+	option password_hash '$6$saltsaltsaltsalt$aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'

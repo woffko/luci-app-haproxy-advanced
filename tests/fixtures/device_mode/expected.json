@@ -1,0 +1,19 @@
+{
+  "ok": true,
+  "errors": [
+  ],
+  "warnings": [
+  ],
+  "skipped": [
+    {
+      "where": "listener dev",
+      "message": "interface 'hatest' is down; its device is left out until it comes up"
+    }
+  ],
+  "firewall": [
+  ],
+  "interfaces": [
+    "wan",
+    "hatest"
+  ]
+}

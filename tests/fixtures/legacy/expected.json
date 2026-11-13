@@ -1,0 +1,17 @@
+{
+  "ok": false,
+  "errors": [
+    {
+      "where": "configuration",
+      "message": "this is a version 0.1 configuration (it has 'frontend' sections). Version 0.2 uses a new format and does not convert it: move the old file to /etc/config/haproxy-advanced.v01 (the GUI offers this) and set the services up again."
+    }
+  ],
+  "warnings": [
+  ],
+  "skipped": [
+  ],
+  "firewall": [
+  ],
+  "interfaces": [
+  ]
+}

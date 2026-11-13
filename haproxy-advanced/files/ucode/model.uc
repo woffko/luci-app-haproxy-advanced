@@ -172,6 +172,10 @@ function parse_global(rep, sections) {
 
 function parse_listener(rep, s) {
 	let w = `listener ${s['.name']}`;
+
+	if (!u.bool(s, 'enabled', true))
+		return { name: s['.name'], enabled: false, tokens: [], where: w };
+
 	let l = {
 		name: s['.name'],
 		enabled: bool_opt(rep, w, s, 'enabled', true),
@@ -301,6 +305,11 @@ function parse_backend(rep, s) {
 function parse_server(rep, s, idx) {
 	let name = u.opt(s, 'name', null);
 	let w = `server ${name ?? ('#' + idx)} of backend ${u.opt(s, 'backend', '?')}`;
+
+	// Disabled sections are not validated: they take no part in the configuration.
+	if (!u.bool(s, 'enabled', true))
+		return { enabled: false, where: w };
+
 	let v = {
 		backend: u.opt(s, 'backend', null),
 		name: name,
@@ -318,9 +327,6 @@ function parse_server(rep, s, idx) {
 		send_proxy: bool_opt(rep, w, s, 'send_proxy', false),
 		where: w
 	};
-
-	if (!v.enabled)
-		return v;
 
 	if (v.backend == null)
 		err(rep, w, 'backend is required');
@@ -369,6 +375,10 @@ function parse_server(rep, s, idx) {
 
 function parse_rule(rep, s, idx) {
 	let w = `rule #${idx} of service ${u.opt(s, 'service', '?')}`;
+
+	if (!u.bool(s, 'enabled', true))
+		return { enabled: false, where: w };
+
 	let r = {
 		service: u.opt(s, 'service', null),
 		enabled: bool_opt(rep, w, s, 'enabled', true),
@@ -382,9 +392,6 @@ function parse_rule(rep, s, idx) {
 		auth_group: u.opt(s, 'auth_group', null),
 		where: w
 	};
-
-	if (!r.enabled)
-		return r;
 
 	if (r.service == null)
 		err(rep, w, 'service is required');
@@ -409,6 +416,10 @@ function parse_rule(rep, s, idx) {
 
 function parse_service(rep, s, g) {
 	let w = `service ${s['.name']}`;
+
+	if (!u.bool(s, 'enabled', true))
+		return { name: s['.name'], enabled: false, where: w };
+
 	let v = {
 		name: s['.name'],
 		enabled: bool_opt(rep, w, s, 'enabled', true),
@@ -439,9 +450,6 @@ function parse_service(rep, s, g) {
 		cert_path: null,
 		where: w
 	};
-
-	if (!v.enabled)
-		return v;
 
 	if (!u.is_name(v.name))
 		err(rep, w, 'the section name must be 1-48 letters, digits or _');
@@ -713,22 +721,32 @@ export function build(sections, env) {
 		acme_used: false
 	};
 
-	// Auth groups and users.
+	function use_group(grp) {
+		if (!grp.used) {
+			grp.used = true;
+			push(rep.errors, ...grp.rep.errors);
+			push(rep.warnings, ...grp.rep.warnings);
+		}
+	}
+
+	// Auth groups and users. Their problems count only when a service uses the
+	// group, so each group collects them in its own report first.
 	for (let s in (by_type.auth_group ?? [])) {
 		let w = `auth_group ${s['.name']}`;
 		let realm = u.opt(s, 'realm', 'Restricted');
+		let grp = { name: s['.name'], realm, users: [], used: false, rep: new_report() };
 
 		if (!u.is_name(s['.name']))
-			err(rep, w, 'the section name must be 1-48 letters, digits or _');
+			err(grp.rep, w, 'the section name must be 1-48 letters, digits or _');
 
 		if (!u.is_quoted_text(realm, 64) || realm == '')
-			err(rep, w, `realm: '${realm}' may only use letters, digits, spaces and . _ , ; : = + * @ ! ? ( ) / -`);
+			err(grp.rep, w, `realm: '${realm}' may only use letters, digits, spaces and . _ , ; : = + * @ ! ? ( ) / -`);
 
-		m.groups[s['.name']] = { name: s['.name'], realm, users: [], used: false };
+		m.groups[s['.name']] = grp;
 	}
 
 	for (let i, s in (by_type.user ?? [])) {
-		let grp = u.opt(s, 'group', null);
+		let gn = u.opt(s, 'group', null);
 		let name = u.opt(s, 'username', null);
 		let hash = u.opt(s, 'password_hash', null);
 		let w = `user ${name ?? ('#' + (i + 1))}`;
@@ -736,53 +754,60 @@ export function build(sections, env) {
 		if (!u.bool(s, 'enabled', true))
 			continue;
 
-		if (grp == null || !m.groups[grp]) {
-			err(rep, w, `group '${grp ?? ''}' does not exist`);
+		let grp = m.groups[gn];
+
+		if (gn == null || !grp) {
+			warn(rep, w, `group '${gn ?? ''}' does not exist, so this user is not used`);
 			continue;
 		}
 
 		if (!u.is_username(name)) {
-			err(rep, w, 'username must be 1-64 letters, digits, ., _, @ or -');
+			err(grp.rep, w, 'username must be 1-64 letters, digits, ., _, @ or -');
 			continue;
 		}
 
 		if (!u.is_password_hash(hash)) {
-			err(rep, w, 'password_hash is not a crypt hash ($6$, $5$, $1$ or $2y$); make one with the GUI');
+			err(grp.rep, w, 'password_hash is not a crypt hash ($6$, $5$, $1$ or $2y$); make one with the GUI');
 			continue;
 		}
 
-		for (let o in m.groups[grp].users)
+		for (let o in grp.users)
 			if (o.name == name)
-				err(rep, w, `user '${name}' appears twice in group '${grp}'`);
+				err(grp.rep, w, `user '${name}' appears twice in group '${gn}'`);
 
-		push(m.groups[grp].users, { name, hash });
+		push(grp.users, { name, hash });
 	}
 
 	// Backends and servers.
+	// Backends and their servers also collect problems in their own report,
+	// which counts only when a service uses the backend.
 	let backends = {};
 
-	for (let s in (by_type.backend ?? []))
-		backends[s['.name']] = parse_backend(rep, s);
+	for (let s in (by_type.backend ?? [])) {
+		let brep = new_report();
+
+		backends[s['.name']] = parse_backend(brep, s);
+		backends[s['.name']].rep = brep;
+	}
 
 	for (let i, s in (by_type.server ?? [])) {
-		let v = parse_server(rep, s, i + 1);
+		let bn = u.opt(s, 'backend', null);
+		let b = (bn != null) ? backends[bn] : null;
+		let v = parse_server(b ? b.rep : rep, s, i + 1);
 
 		if (!v.enabled)
 			continue;
 
-		if (v.backend != null && !backends[v.backend]) {
-			err(rep, v.where, `backend '${v.backend}' does not exist`);
+		if (!b) {
+			warn(rep, v.where, `backend '${bn ?? ''}' does not exist, so this server is not used`);
 			continue;
 		}
 
-		if (v.backend == null)
-			continue;
-
-		for (let o in backends[v.backend].servers)
+		for (let o in b.servers)
 			if (o.name == v.name)
-				err(rep, v.where, `server name '${v.name}' appears twice in backend '${v.backend}'`);
+				err(b.rep, v.where, `server name '${v.name}' appears twice in backend '${bn}'`);
 
-		push(backends[v.backend].servers, v);
+		push(b.servers, v);
 	}
 
 	// Listeners.
@@ -825,7 +850,7 @@ export function build(sections, env) {
 			else if (!m.groups[r.auth_group])
 				err(rep, r.where, `auth_group '${r.auth_group}' does not exist`);
 			else
-				m.groups[r.auth_group].used = true;
+				use_group(m.groups[r.auth_group]);
 		}
 
 		push(svc.rules, r);
@@ -858,11 +883,11 @@ export function build(sections, env) {
 			continue;
 		}
 
-		if (svc.auth_group != null) {
+		if (svc.auth_group != null && svc.mode == 'http') {
 			if (!m.groups[svc.auth_group])
 				err(rep, svc.where, `auth_group '${svc.auth_group}' does not exist`);
 			else
-				m.groups[svc.auth_group].used = true;
+				use_group(m.groups[svc.auth_group]);
 		}
 
 		if (svc.mode == 'passthrough') {
@@ -892,6 +917,12 @@ export function build(sections, env) {
 		}
 
 		if (b) {
+			if (!b.merged) {
+				b.merged = true;
+				push(rep.errors, ...b.rep.errors);
+				push(rep.warnings, ...b.rep.warnings);
+			}
+
 			let want = (svc.mode == 'passthrough') ? 'tcp' : 'http';
 
 			if (b.mode != null && b.mode != want)
@@ -1129,7 +1160,13 @@ export function build(sections, env) {
 	for (let gn, grp in m.groups) {
 		if (grp.used && !length(grp.users))
 			warn(rep, `auth_group ${gn}`, 'has no enabled user, so nobody can log in');
+		else if (!grp.used && length(grp.rep.errors))
+			warn(rep, `auth_group ${gn}`, `is not used; fix its ${length(grp.rep.errors)} problem(s) before a service uses it`);
 	}
+
+	for (let bn, b in backends)
+		if (!b.merged && length(b.rep.errors))
+			warn(rep, `backend ${bn}`, `is not used; fix its ${length(b.rep.errors)} problem(s) before a service uses it`);
 
 	m.services = [];
 

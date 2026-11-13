@@ -1,0 +1,21 @@
+{
+  "ok": true,
+  "errors": [
+  ],
+  "warnings": [
+    {
+      "where": "listener pub",
+      "message": "default_certificate /c/missing.pem does not exist; the first service's certificate is the default"
+    },
+    {
+      "where": "backend b",
+      "message": "has no enabled server; requests get 503"
+    }
+  ],
+  "skipped": [
+  ],
+  "firewall": [
+  ],
+  "interfaces": [
+  ]
+}

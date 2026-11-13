@@ -1,0 +1,18 @@
+{
+  "ok": false,
+  "errors": [
+    {
+      "where": "listener pub",
+      "message": "interface 'wan6x' does not exist in /etc/config/network"
+    }
+  ],
+  "warnings": [
+  ],
+  "skipped": [
+  ],
+  "firewall": [
+  ],
+  "interfaces": [
+    "wan6x"
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "ok": true,
+  "errors": [
+  ],
+  "warnings": [
+    {
+      "where": "listener alt",
+      "message": "uhttpd (main) is configured to listen on 0.0.0.0:18080 too"
+    }
+  ],
+  "skipped": [
+    {
+      "where": "listener pub",
+      "message": "port 443 on 0.0.0.0 is already used by uhttpd; the listener is left out (choose another port or address)"
+    }
+  ],
+  "firewall": [
+  ],
+  "interfaces": [
+    "wan"
+  ]
+}

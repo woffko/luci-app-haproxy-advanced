@@ -1,0 +1,29 @@
+{
+  "ok": true,
+  "errors": [
+  ],
+  "warnings": [
+    {
+      "where": "service a",
+      "message": "listener 'off' is disabled, so this service is not published"
+    },
+    {
+      "where": "backend b",
+      "message": "has no enabled server; requests get 503"
+    },
+    {
+      "where": "auth_group empty",
+      "message": "has no enabled user, so nobody can log in"
+    },
+    {
+      "where": "backend unused",
+      "message": "is not used; fix its 1 problem(s) before a service uses it"
+    }
+  ],
+  "skipped": [
+  ],
+  "firewall": [
+  ],
+  "interfaces": [
+  ]
+}

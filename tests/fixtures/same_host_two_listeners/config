@@ -1,0 +1,31 @@
+config global 'global'
+	option enabled '1'
+
+config listener 'lan'
+	list address 'lan'
+	option port '443'
+
+config listener 'wan'
+	list address 'wan'
+	option port '443'
+
+config service 'lanside'
+	option listener 'lan'
+	list hostname 'nas.example.com'
+	option backend 'b'
+	option certificate '/c/a.pem'
+
+config service 'wanside'
+	option listener 'wan'
+	list hostname 'nas.example.com'
+	option backend 'b'
+	option certificate '/c/a.pem'
+	list blocked_path '/admin/'
+
+config backend 'b'
+
+config server
+	option backend 'b'
+	option name 's'
+	option address '192.168.1.2'
+	option port '80'

@@ -1,0 +1,68 @@
+config global 'global'
+	option enabled '1'
+
+config listener 'pub'
+	list address '203.0.113.10'
+	option port '443'
+
+config service 'app'
+	option listener 'pub'
+	list hostname 'app.example.com'
+	option backend 'app'
+	option certificate '/c/app.pem'
+	option auth_group 'staff'
+	option auth_fail_limit '0'
+
+config rule
+	option service 'app'
+	option order '20'
+	option action 'allow'
+	list path '/Public/'
+	list method 'get'
+	list method 'HEAD'
+
+config rule
+	option service 'app'
+	option order '10'
+	option action 'deny'
+	list source '10.0.0.0/8'
+	list path '/API/'
+	option deny_status '404'
+
+config rule
+	option service 'app'
+	option action 'auth'
+	list path '/admin/'
+	option auth_group 'admins'
+
+config rule
+	option service 'app'
+	option enabled '0'
+	option action 'bogus'
+
+config rule
+	option service 'app'
+	option action 'deny'
+
+config auth_group 'staff'
+	option realm 'Staff'
+
+config auth_group 'admins'
+
+config user
+	option group 'staff'
+	option username 'bob'
+	option password_hash '$6$saltsaltsaltsalt$aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+
+config user
+	option group 'admins'
+	option username 'root.admin'
+	option password_hash '$2y$10$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ01234'
+
+config backend 'app'
+
+config server
+	option backend 'app'
+	option name 'a'
+	option address '192.168.1.40'
+	option port '80'

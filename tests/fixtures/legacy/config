@@ -1,0 +1,8 @@
+config global 'global'
+	option enabled '1'
+
+config frontend
+	option name 'ServiceExample'
+
+config bind
+	option frontend 'ServiceExample'
