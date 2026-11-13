@@ -421,6 +421,22 @@ return view.extend({
 		s.handleAdd = function(ev, name) {
 			return view.addServiceDialog(this, name);
 		};
+		// LuCI keeps the add button of named sections disabled until a name is
+		// typed next to it; the dialog asks for the name itself.
+		s.renderSectionAdd = function(extra_class) {
+			const el = E('div', { 'class': 'cbi-section-create' }, [
+				E('button', {
+					'class': 'cbi-button cbi-button-add',
+					'title': _('Add service…'),
+					'click': ui.createHandlerFn(this, (ev) => this.handleAdd(ev, ''))
+				}, _('Add service…'))
+			]);
+
+			if (extra_class != null)
+				el.classList.add(extra_class);
+
+			return el;
+		};
 
 		s.tab('general', _('General'));
 		s.tab('tls', _('TLS'));
