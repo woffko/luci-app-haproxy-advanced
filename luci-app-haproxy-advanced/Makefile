@@ -4,6 +4,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_VERSION:=0.2.0
 PKG_RELEASE:=1
+PKG_PO_VERSION:=$(PKG_VERSION)-r$(PKG_RELEASE)
 PKG_LICENSE:=MIT
 PKG_MAINTAINER:=woffko <2505149+woffko@users.noreply.github.com>
 
