@@ -14,7 +14,7 @@ Task: `docs/goals/goal-a-task.md`. Branch `goal-a`.
 | 6. The extras | written; VM check pending |
 | 7. Documentation | README, schema, testing.md and CHANGELOG written; measurements pending |
 | Tests | 25 golden fixtures pass, 34/34 mutations caught, crypt vectors pass, 21/21 golden configs pass `haproxy -c` 3.2.15 without warnings; CI green |
-| VM acceptance | request behaviour checked on the Ubuntu VM with OpenWrt's HAProxy 3.2.15 (43/43); OpenWrt VM run waits for its password |
+| VM acceptance | OpenWrt VM: install 8/8, golden 40/40, functional 58/58, interfaces 20/20, ACME 8/8, every browser step passes; final clean run and cleanup pending (both VMs were powered off by a VMware automation stop at 15:53Z) |
 
 ## Stage 1: layout and packaging
 
@@ -135,6 +135,56 @@ Run 1 found that the master CLI path given to `-S` must be absolute (the init sc
 already uses an absolute path; only the test harness was wrong). The OpenWrt VM run
 still has to cover what depends on OpenWrt: procd, the firewall rule, ubus and LuCI,
 interfaces, ACME, the staged preview and the failing apply.
+
+## OpenWrt VM acceptance (192.168.189.130, OpenWrt 25.12.5 r33051, x86_64)
+
+The root password came from the encrypted test-asset store of cake-autorate-rs, with the
+owner's permission (2026-11-13), and reached ssh only through stdin.
+
+- **probe**: `wan` (eth1) holds 192.168.189.130 and is in firewall zone `lan`; uhttpd
+  listens on 0.0.0.0/[::]:80 and :443; no stock haproxy before the install.
+- **snapshot** (`logs/accept-snapshot-1/snapshot.json`): 313 packages, 41 files in
+  /etc/config, no crontab, LuCI language `auto`.
+- **install**: 8/8. `apk add` of both APKs and acme-acmesh pulled haproxy 3.2.21-r1,
+  ucode-mod-socket, socat, openssl-util; rpcd served `luci.haproxy-advanced` right
+  after the install without a manual restart (F11); `default_postinst` enabled the
+  init script; no uci-defaults left.
+- **golden**: 40/40: the 20 golden configurations pass `haproxy -c` of the VM's
+  HAProxy 3.2.21 without a warning (earlier notes said 21; there are 20 valid ones).
+- **functional**: 58/58 on run 3. Runs 1-2 found:
+  - an unparsable UCI file produced "disabled" instead of an error (fixed: reported
+    as an error);
+  - `rand()` is not a ucode builtin, so every apply died (fixed: `clock()`), and the
+    ctl swallowed the exception (fixed: recorded as a failed apply);
+  - test bugs: a service and a backend both named `pt`, a stale last-apply.json read.
+- **interfaces** (F3): 20/20 on run 5. Run 1 found a real bug: a fresh IPv6 address is
+  tentative during duplicate address detection, the reload failed with "cannot bind
+  socket (Address not available)" (the old configuration kept running and the failure
+  was reported). Interface addresses are now bound with `transparent`. The test
+  interface needed a veth port so its IPv6 address leaves the tentative state. Times:
+  listener back 7.5 s after `ifup`, HAProxy on the new address 4.6 s after the change.
+- **acme**: 8/8 with Pebble 2.3.1 and challtestsrv on the Ubuntu VM: issued through
+  the HTTP companion (port 18080) and acme.sh standalone on 18402; `acme.issue` and a
+  forced `acme.renew` reloaded HAProxy with the new certificate; acme's temporary
+  nft rule is gone afterwards.
+- **browser**: every step passed after fixes: Add service dialog → editor → Save &
+  Apply → "configuration applied" notice; unsaved change visible on the Configuration
+  tab; failing apply shown in LuCI while the old configuration serves; password set in
+  the user editor; certificate list with expiry; firewall checkbox (2 → 0 → 2 rules);
+  runtime maintenance/ready from the GUI (503/200); stock haproxy stopped and
+  disabled from the GUI and restored as found; 0.1 file refused and moved to `.v01`
+  from the GUI; Russian; no horizontal scroll at 390 px on any tab. Bugs found and
+  fixed: stale reference drop-downs (the editor would have saved another backend),
+  the nested password dialog replaced the editor, HAProxy 3.2 prints `notAfter:`, a
+  whitespace-only translation key.
+- **reboot**: not done. All nine sessions said a reboot does not affect them, but most
+  said the approval is the owner's; the task allows the reboot only when every session
+  agrees, so it was recorded as not done. Start without an interface address is
+  covered by the interfaces scenario instead.
+- **measurements**: the first password-cost run over the network was dominated by
+  latency; the CPU-time run was cut short when both VMs were powered off by a VMware
+  automation stop (`Vix: VMAutomationPowerOff` at 15:53:52Z in the OpenWrt VM's
+  vmware.log; not issued by this session).
 
 ## CI
 

@@ -887,6 +887,122 @@ def sync(vm, out, args):
     print("synced %d files" % len(files))
 
 
+def node_step(vm, step, out):
+    p = subprocess.run(["node", str(ROOT / "tools/browser.js"), step, str(out)],
+                       input=vm.password + b"\n", capture_output=True, timeout=600)
+    text = p.stdout.decode(errors="replace") + p.stderr.decode(errors="replace")
+    save(out, "step-%s.txt" % step, text)
+    return "STEP_OK " + step in text, text[-600:]
+
+
+def curl_status(host, path="/x", user=None):
+    return vc.curl(host, path, user=user).get("status")
+
+
+def nft_rules(vm):
+    return int(vm.out("nft list ruleset | grep -c 'ubus:haproxy-advanced' || true").strip() or 0)
+
+
+@scenario
+def browser(vm, out, args):
+    """The LuCI steps of tools/browser.js, with checks on the VM between them.
+    Starts from the functional configuration."""
+    c = Checks(out)
+    stage_pki(vm)
+    iface = iface_of(vm, vc.VM)
+    zone = zone_of(vm, iface)
+    la = apply_config(vm, functional_config(iface, zone, crypt_hash(TEST_PASSWORD)))
+    c.check("start from the functional configuration", la and la["state"] == "applied", la and la.get("state"))
+    X = "svc-x.hatest.example"
+
+    ok, t = node_step(vm, "screens", out)
+    c.check("every tab renders", ok, t)
+
+    ok, t = node_step(vm, "add-service", out)
+    c.check("Add service dialog, editor, Save & Apply, applied notice", ok, t)
+    c.check("the new service's login works (hash made in the browser)", curl_status(X, user="bob:browser-pass-1") == 200)
+    c.check("the new service refuses a wrong password", curl_status(X, user="bob:wrong") == 401)
+    c.check("the new service keeps its own backend",
+            vm.out("uci -q get haproxy-advanced.svcx.backend", check=False).strip() == "svcx_backend")
+
+    ok, t = node_step(vm, "staged", out)
+    c.check("Configuration tab shows unsaved changes (F5)", ok, t)
+
+    ok, t = node_step(vm, "apply-error", out)
+    c.check("a failing apply is shown in LuCI (F5)", ok, t)
+    c.check("the running configuration keeps serving", curl_status(B) == 200)
+
+    ok, t = node_step(vm, "password", out)
+    c.check("password set in the user editor", ok, t)
+    c.check("new password works", curl_status(X, user="bob:browser-pass-2") == 200)
+    c.check("old password refused", curl_status(X, user="bob:browser-pass-1") == 401)
+
+    ok, t = node_step(vm, "certs", out)
+    c.check("certificate list with expiry, picker values, no key contents", ok, t)
+
+    before = nft_rules(vm)
+    ok, t = node_step(vm, "firewall-off", out)
+    time.sleep(3)
+    off = nft_rules(vm)
+    ok2, t2 = node_step(vm, "firewall-on", out)
+    time.sleep(3)
+    on = nft_rules(vm)
+    c.check("firewall checkbox removes and restores the rules", ok and ok2 and before == 2 and off == 0 and on == 2,
+            (before, off, on, t, t2))
+
+    ok, t = node_step(vm, "runtime", out)
+    c.check("runtime panel: maintenance from the GUI", ok and curl_status(A, "/share/m") == 503, t)
+    ok, t = node_step(vm, "runtime-ready", out)
+    c.check("runtime panel: ready again from the GUI", ok and curl_status(A, "/share/m") == 200, t)
+
+    stock = lambda: (vm.out("ls /etc/rc.d | grep -c 'haproxy$' || true").strip(),
+                     vm.out("pgrep -f /etc/haproxy.cfg | wc -l").strip())
+    found = stock()
+    ok, t = node_step(vm, "stock", out)
+    after = stock()
+    c.check("stock haproxy stopped and disabled from the GUI", ok and after[0] == "0", (found, after, t))
+
+    if found[0] != "0":
+        vm.run("/etc/init.d/haproxy enable; /etc/init.d/haproxy start", check=False)
+
+    c.check("stock haproxy restored as found", stock()[0] == found[0])
+
+    vm.run("cp /etc/config/haproxy-advanced %s/current.config" % vmlib.STAGE)
+    vm.upload(subprocess.run(["git", "show", "3bc4ff6:root/etc/config/haproxy-advanced"], cwd=ROOT,
+                             capture_output=True, check=True).stdout, "/etc/config/haproxy-advanced")
+    vm.run("/etc/init.d/haproxy-advanced reload", check=False, timeout=120)
+    la = last_apply(vm)
+    c.check("a 0.1 configuration is refused with a reason", la and la["state"] == "failed" and "version 0.1" in la["errors"][0]["message"])
+    c.check("the running configuration keeps serving under a 0.1 file", curl_status(B) == 200)
+    ok, t = node_step(vm, "legacy", out)
+    moved = vm.out("grep -c 'config frontend' /etc/config/haproxy-advanced.v01 2>/dev/null || true").strip()
+    c.check("the GUI moves the 0.1 file aside (O3)", ok and moved == "1", t)
+    vm.run("cp %s/current.config /etc/config/haproxy-advanced && rm -f /etc/config/haproxy-advanced.v01 && "
+           "/etc/init.d/haproxy-advanced reload" % vmlib.STAGE, check=False, timeout=120)
+
+    ru = sorted(APK_DIR.glob("luci-i18n-haproxy-advanced-ru-*.apk"))[-1]
+    vm.upload(ru.read_bytes(), "%s/%s" % (vmlib.STAGE, ru.name))
+    r = vm.run("apk add --allow-untrusted %s/%s luci-i18n-base-ru 2>&1" % (vmlib.STAGE, ru.name), check=False, timeout=300)
+    c.check("Russian packages install", r.returncode == 0, r.stdout.decode(errors="replace")[-300:])
+    vm.run("cp /etc/config/luci %s/luci.orig && uci set luci.main.lang=ru && uci commit luci && "
+           "rm -f /tmp/luci-indexcache.*; rm -rf /tmp/luci-modulecache" % vmlib.STAGE)
+
+    try:
+        ok, t = node_step(vm, "russian", out)
+        c.check("Russian translation", ok, t)
+    finally:
+        vm.run("cp %s/luci.orig /etc/config/luci" % vmlib.STAGE)
+
+    ok, t = node_step(vm, "phone", out)
+    widths = (out / "phone.txt").read_text() if (out / "phone.txt").exists() else ""
+    c.check("no horizontal scroll at 390 px on any tab", ok and widths and all(
+        int(l.split()[1]) <= 0 for l in widths.splitlines()), widths)
+
+    la = apply_config(vm, functional_config(iface, zone, crypt_hash(TEST_PASSWORD)))
+    c.check("back to the functional configuration", la and la["state"] == "applied")
+    return c.finish()
+
+
 def main():
     if len(sys.argv) < 2 or sys.argv[1] not in SCENARIOS:
         print(__doc__)
