@@ -4,12 +4,13 @@ HAProxy on the OpenWrt VM. Each helper returns plain data; accept.py decides
 what passes."""
 
 import json
+import os
 import socket
 import ssl
 import subprocess
 import time
 
-VM = "192.168.189.130"
+VM = os.environ.get("HA_TEST_TARGET", "192.168.189.130")
 TLS_PORT = 18443
 HTTP_PORT = 18080
 

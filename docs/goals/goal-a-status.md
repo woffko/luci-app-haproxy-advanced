@@ -14,7 +14,7 @@ Task: `docs/goals/goal-a-task.md`. Branch `goal-a`.
 | 6. The extras | written; VM check pending |
 | 7. Documentation | README, schema, testing.md and CHANGELOG written; measurements pending |
 | Tests | 25 golden fixtures pass, 34/34 mutations caught, crypt vectors pass, 21/21 golden configs pass `haproxy -c` 3.2.15 without warnings; CI green |
-| VM acceptance | tools written; waiting for the OpenWrt VM password from the owner |
+| VM acceptance | request behaviour checked on the Ubuntu VM with OpenWrt's HAProxy 3.2.15 (43/43); OpenWrt VM run waits for its password |
 
 ## Stage 1: layout and packaging
 
@@ -105,6 +105,36 @@ It checked every golden configuration with `haproxy -c`:
 - run 3: 21 of 21 valid, no warning in any configuration.
 
 Two mutations were added for these rules (34 in all, all caught).
+
+Then the request checks of the functional scenario ran against the same HAProxy on the
+Ubuntu VM (`tools/prerun_ubuntu.py`, configuration made by the generator from the
+scenario's UCI config, run as the codex user with the user/group lines removed and
+the sockets moved to its directory). Result, run 4: **43 of 43 pass**:
+
+- F1: POST with `Content-Length: 0` and a POST whose body arrives 1.5 s late: 200;
+- F2: two HTTPS services and a passthrough service on one port, routed by Host, each
+  with its own certificate by SNI; an unknown host gets 404;
+- F6: the Host header with `:18443` matches;
+- F7: `/cgi-bin/x`, `/CGI-BIN/x`, `/%63gi-bin/x`, `/cgi-bin;x/y` → 403;
+  `//cgi-bin/x`, `/x/../cgi-bin/`, `/x/%2e%2e/cgi-bin/`, `/a%00b`, `/share/../admin/`
+  → 400; `/admin/`, `/ADMIN/`, `/admin;p/` → 403; `/share/f` → 200 without login,
+  `/SHARE/f` and `/other` → 401;
+- D6: the browser-made `$6$` hash logs in; F10: wrong passwords get 401, then 429;
+- F9: the backend sees only `X-Forwarded-For: 192.168.189.1`, no `X-Real-IP` or
+  `Forwarded`, `X-Forwarded-Proto: https`, `X-Forwarded-Port: 18443`;
+- F12: a WebSocket stays open past 8 s idle with a 5 s client timeout;
+- F13: `verify required` with the test CA and `verifyhost` works;
+- HSTS only on the service that enables it; HTTP/2 negotiated; the companion port
+  redirects with 308 to `https://…:18443/p?q=1` and answers 404 to unknown hosts;
+- passthrough: the client sees the server's own certificate, and the HTTPS services
+  behind the TCP front still see the real client address (PROXY v2);
+- rate limit 20/10 s: 429 after 20; runtime `set server … state maint` gives 503,
+  `ready` gives 200 again.
+
+Run 1 found that the master CLI path given to `-S` must be absolute (the init script
+already uses an absolute path; only the test harness was wrong). The OpenWrt VM run
+still has to cover what depends on OpenWrt: procd, the firewall rule, ubus and LuCI,
+interfaces, ACME, the staged preview and the failing apply.
 
 ## CI
 

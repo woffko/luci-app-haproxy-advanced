@@ -253,6 +253,93 @@ def golden(vm, out, args):
     return c.finish()
 
 
+HOSTS = ("svc-a.hatest.example", "svc-b.hatest.example", "svc-c.hatest.example", "pt.hatest.example")
+A, B, C, PT = HOSTS
+AUTH = "alice:" + TEST_PASSWORD
+
+
+def request_checks(c):
+    """Requests through HAProxy that do not depend on OpenWrt; run against the
+    OpenWrt VM by functional, and against the Ubuntu VM by tools/prerun_ubuntu.py."""
+    auth = AUTH
+
+    # F1: Content-Length: 0 and a late body pass.
+    r = vc.curl(B, "/post", method="POST", headers=["Content-Length: 0"])
+    c.check("F1 POST with Content-Length: 0 passes", r["status"] == 200, r)
+    r = vc.raw_tls(B, [("POST /late HTTP/1.1\r\nHost: %s:18443\r\nContent-Length: 10\r\n\r\n" % B).encode(), b"0123456789"], pause=1.5)
+    c.check("F1 POST whose body arrives 1.5 s late passes", " 200 " in r["status_line"] + " " and (r.get("json") or {}).get("body_length") == 10, r)
+
+    # F2: host routing on one listener, certificate by SNI, unknown host.
+    ra, rb = vc.curl(A, "/share/x"), vc.curl(B, "/x")
+    c.check("F2 svc-a routed to the HTTP echo", ra["status"] == 200 and ra.get("json", {}).get("server") == "http", ra)
+    c.check("F2 svc-b routed to the HTTPS echo (verify required with the test CA, F13)",
+            rb["status"] == 200 and rb.get("json", {}).get("server") == "https", rb)
+    pa, pb = vc.tls_peer(A), vc.tls_peer(B)
+    c.check("F2 SNI svc-a gets the svc-a certificate", pa["subject"] == "svc-a", pa)
+    c.check("F2 SNI svc-b gets the svc-b certificate", pb["subject"] == "svc-b", pb)
+    r = vc.curl("unknown.hatest.example", "/")
+    c.check("F2 unknown host gets 404", r["status"] == 404, r)
+
+    # F6: Host with a port (curl sends svc-a.hatest.example:18443).
+    c.check("F6 Host header with a port matches", ra["status"] == 200 and any(
+        v.endswith(":18443") for v in vc.echo_headers(ra).get("host", [])), vc.echo_headers(ra).get("host"))
+
+    # F7: path forms.
+    cases = [("/cgi-bin/x", 403), ("/CGI-BIN/x", 403), ("/%63gi-bin/x", 403), ("/cgi-bin;x/y", 403),
+             ("//cgi-bin/x", 400), ("/x/../cgi-bin/", 400), ("/x/%2e%2e/cgi-bin/", 400), ("/a%00b", 400),
+             ("/admin/", 403), ("/ADMIN/", 403), ("/admin;p/", 403), ("/share/f", 200), ("/SHARE/f", 401),
+             ("/share/../admin/", 400), ("/other", 401)]
+
+    for path, want in cases:
+        r = vc.curl(A, path)
+        c.check("F7 %s -> %d" % (path, want), r["status"] == want, r.get("status") or r.get("error"))
+
+    r = vc.curl(A, "/other", user=auth)
+    c.check("login with the browser-made $6$ hash works (D6)", r["status"] == 200, r)
+    c.check("HSTS on svc-a", "strict-transport-security" in r["headers"], r["headers"])
+    r2 = vc.curl(B, "/x")
+    c.check("no HSTS on svc-b", "strict-transport-security" not in r2["headers"], r2["headers"])
+
+    # F9: forwarding headers.
+    r = vc.curl(A, "/share/h", headers=["X-Forwarded-For: 6.6.6.6", "X-Real-IP: 6.6.6.6", "Forwarded: for=6.6.6.6",
+                                         "X-Forwarded-Proto: http"])
+    h = vc.echo_headers(r)
+    c.check("F9 X-Forwarded-For is only the client address", h.get("x-forwarded-for") == ["192.168.189.1"], h)
+    c.check("F9 X-Real-IP and Forwarded removed", "x-real-ip" not in h and "forwarded" not in h, h)
+    c.check("F9 X-Forwarded-Proto https", h.get("x-forwarded-proto") == ["https"], h)
+    c.check("F9 X-Forwarded-Port 18443", h.get("x-forwarded-port") == ["18443"], h)
+
+    # HTTP/2.
+    r = vc.curl(B, "/h2", http2=True)
+    c.check("HTTP/2 negotiated", r["status"] == 200 and r.get("version") == "2", r.get("version"))
+
+    # Companion: redirect with the port kept, 404 for unknown hosts.
+    r = vc.curl(A, "/p?q=1", port=18080, scheme="http")
+    c.check("redirect 308 to https with port 18443", r["status"] == 308 and
+            r["headers"].get("location") == "https://svc-a.hatest.example:18443/p?q=1", r)
+    r = vc.curl("unknown.hatest.example", "/", port=18080, scheme="http")
+    c.check("companion: unknown host 404", r["status"] == 404, r)
+
+    # Passthrough on the same port.
+    pp = vc.tls_peer(PT)
+    c.check("passthrough: client sees the server's own certificate", pp["issuer"] == "haproxy-advanced passthrough CA", pp)
+    r = vc.curl(PT, "/pt")
+    c.check("passthrough: request reaches the passthrough server", r.get("json", {}).get("server") == "passthrough", r)
+    c.check("passthrough: HTTPS services behind it see the real client (PROXY v2)",
+            vc.echo_headers(ra).get("x-forwarded-for") == ["192.168.189.1"], vc.echo_headers(ra))
+
+    # F12: WebSocket idle past the 5 s client timeout.
+    st, echoed = vc.websocket_idle(C, 8)
+    c.check("F12 WebSocket upgrade", " 101 " in st + " ", st)
+    c.check("F12 WebSocket survives 8 s idle (client timeout 5 s, tunnel 1h)", echoed == "ping-after-idle", echoed)
+
+    # Rate limit on svc-b: 20 per 10 s. Let the earlier requests' window pass.
+    time.sleep(11)
+    statuses = [vc.curl(B, "/r%d" % i, timeout=5)["status"] for i in range(30)]
+    c.check("rate limit answers 429 beyond 20 requests per 10 s", 429 in statuses and statuses[:15].count(200) == 15, statuses)
+    return ra
+
+
 def functional_config(iface, zone, hash_, extra=""):
     return """
 config global 'global'
@@ -360,88 +447,15 @@ def functional(vm, out, args):
     save(out, "haproxy.cfg", vm.out("cat /var/etc/haproxy-advanced.cfg"))
     time.sleep(2)
 
-    A, B, C, PT = "svc-a.hatest.example", "svc-b.hatest.example", "svc-c.hatest.example", "pt.hatest.example"
-    auth = "alice:" + TEST_PASSWORD
+    A, B, C, PT = HOSTS
+    auth = AUTH
+    ra = request_checks(c)
 
     # Firewall (D7): the listener's ports are open while the service runs.
     nft = vm.out("nft list ruleset")
     save(out, "nft-1.txt", nft)
     c.check("firewall accepts 18443 from the zone", "18443" in nft and "haproxy-advanced" in nft, "")
     c.check("firewall accepts 18080 from the zone", "18080" in nft, "")
-
-    # F1: Content-Length: 0 and a late body pass.
-    r = vc.curl(B, "/post", method="POST", headers=["Content-Length: 0"])
-    c.check("F1 POST with Content-Length: 0 passes", r["status"] == 200, r)
-    r = vc.raw_tls(B, [("POST /late HTTP/1.1\r\nHost: %s:18443\r\nContent-Length: 10\r\n\r\n" % B).encode(), b"0123456789"], pause=1.5)
-    c.check("F1 POST whose body arrives 1.5 s late passes", " 200 " in r["status_line"] + " " and (r.get("json") or {}).get("body_length") == 10, r)
-
-    # F2: host routing on one listener, certificate by SNI, unknown host.
-    ra, rb = vc.curl(A, "/share/x"), vc.curl(B, "/x")
-    c.check("F2 svc-a routed to the HTTP echo", ra["status"] == 200 and ra.get("json", {}).get("server") == "http", ra)
-    c.check("F2 svc-b routed to the HTTPS echo (verify required with the test CA, F13)",
-            rb["status"] == 200 and rb.get("json", {}).get("server") == "https", rb)
-    pa, pb = vc.tls_peer(A), vc.tls_peer(B)
-    c.check("F2 SNI svc-a gets the svc-a certificate", pa["subject"] == A, pa)
-    c.check("F2 SNI svc-b gets the svc-b certificate", pb["subject"] == B, pb)
-    r = vc.curl("unknown.hatest.example", "/")
-    c.check("F2 unknown host gets 404", r["status"] == 404, r)
-
-    # F6: Host with a port (curl sends svc-a.hatest.example:18443).
-    c.check("F6 Host header with a port matches", ra["status"] == 200 and any(
-        v.endswith(":18443") for v in vc.echo_headers(ra).get("host", [])), vc.echo_headers(ra).get("host"))
-
-    # F7: path forms.
-    cases = [("/cgi-bin/x", 403), ("/CGI-BIN/x", 403), ("/%63gi-bin/x", 403), ("/cgi-bin;x/y", 403),
-             ("//cgi-bin/x", 400), ("/x/../cgi-bin/", 400), ("/x/%2e%2e/cgi-bin/", 400), ("/a%00b", 400),
-             ("/admin/", 403), ("/ADMIN/", 403), ("/admin;p/", 403), ("/share/f", 200), ("/SHARE/f", 401),
-             ("/share/../admin/", 400), ("/other", 401)]
-
-    for path, want in cases:
-        r = vc.curl(A, path)
-        c.check("F7 %s -> %d" % (path, want), r["status"] == want, r.get("status") or r.get("error"))
-
-    r = vc.curl(A, "/other", user=auth)
-    c.check("login with the browser-made $6$ hash works (D6)", r["status"] == 200, r)
-    c.check("HSTS on svc-a", "strict-transport-security" in r["headers"], r["headers"])
-    r2 = vc.curl(B, "/x")
-    c.check("no HSTS on svc-b", "strict-transport-security" not in r2["headers"], r2["headers"])
-
-    # F9: forwarding headers.
-    r = vc.curl(A, "/share/h", headers=["X-Forwarded-For: 6.6.6.6", "X-Real-IP: 6.6.6.6", "Forwarded: for=6.6.6.6",
-                                         "X-Forwarded-Proto: http"])
-    h = vc.echo_headers(r)
-    c.check("F9 X-Forwarded-For is only the client address", h.get("x-forwarded-for") == ["192.168.189.1"], h)
-    c.check("F9 X-Real-IP and Forwarded removed", "x-real-ip" not in h and "forwarded" not in h, h)
-    c.check("F9 X-Forwarded-Proto https", h.get("x-forwarded-proto") == ["https"], h)
-    c.check("F9 X-Forwarded-Port 18443", h.get("x-forwarded-port") == ["18443"], h)
-
-    # HTTP/2.
-    r = vc.curl(B, "/h2", http2=True)
-    c.check("HTTP/2 negotiated", r["status"] == 200 and r.get("version") == "2", r.get("version"))
-
-    # Companion: redirect with the port kept, 404 for unknown hosts.
-    r = vc.curl(A, "/p?q=1", port=18080, scheme="http")
-    c.check("redirect 308 to https with port 18443", r["status"] == 308 and
-            r["headers"].get("location") == "https://svc-a.hatest.example:18443/p?q=1", r)
-    r = vc.curl("unknown.hatest.example", "/", port=18080, scheme="http")
-    c.check("companion: unknown host 404", r["status"] == 404, r)
-
-    # Passthrough on the same port.
-    pp = vc.tls_peer(PT)
-    c.check("passthrough: client sees the server's own certificate", pp["issuer"] == "haproxy-advanced passthrough CA", pp)
-    r = vc.curl(PT, "/pt")
-    c.check("passthrough: request reaches the passthrough server", r.get("json", {}).get("server") == "passthrough", r)
-    c.check("passthrough: HTTPS services behind it see the real client (PROXY v2)",
-            vc.echo_headers(ra).get("x-forwarded-for") == ["192.168.189.1"], vc.echo_headers(ra))
-
-    # F12: WebSocket idle past the 5 s client timeout.
-    st, echoed = vc.websocket_idle(C, 8)
-    c.check("F12 WebSocket upgrade", " 101 " in st + " ", st)
-    c.check("F12 WebSocket survives 8 s idle (client timeout 5 s, tunnel 1h)", echoed == "ping-after-idle", echoed)
-
-    # Rate limit on svc-b: 20 per 10 s.
-    statuses = [vc.curl(B, "/r%d" % i, timeout=5)["status"] for i in range(30)]
-    c.check("rate limit answers 429 beyond 20 requests per 10 s", 429 in statuses and statuses[:15].count(200) == 15, statuses)
 
     # Runtime panel.
     rt = ubus(vm, "luci.haproxy-advanced", "runtime")
