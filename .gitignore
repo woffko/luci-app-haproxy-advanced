@@ -1,8 +1,10 @@
+# Build and test output
 *.ipk
 *.apk
 *.tar.gz
 *.tmp
+/logs/
 /bin/
 /build_dir/
 /tmp/
-
+node_modules/

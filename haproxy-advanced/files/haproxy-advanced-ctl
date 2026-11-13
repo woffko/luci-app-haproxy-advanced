@@ -1,0 +1,189 @@
+#!/usr/bin/ucode
+// SPDX-License-Identifier: MIT
+// Command line of the haproxy-advanced service, used by its init script.
+//
+//   apply         generate, check with haproxy -c and install the configuration;
+//                 exit 0 applied, 3 disabled, 1 error (nothing changed)
+//   preview       print the configuration that would be generated
+//   check         generate and check without installing
+//   reload        reload the running HAProxy through its master socket
+//   verify-start  wait for a freshly started HAProxy and record the result
+//   running       exit 0 when HAProxy's master answers
+//   interfaces    interfaces whose changes need a reload
+//   firewall      firewall rules of the applied configuration
+//   status        state and last apply result as JSON
+
+'use strict';
+
+import * as fs from 'fs';
+import * as sys from '/usr/share/haproxy-advanced/system.uc';
+import { generate } from '/usr/share/haproxy-advanced/core.uc';
+
+function log(prio, msg) {
+	system([ 'logger', '-t', 'haproxy-advanced', '-p', `daemon.${prio}`, msg ]);
+}
+
+function print_problems(res) {
+	for (let e in res.errors)
+		print(`error: ${e.where}: ${e.message}\n`);
+
+	for (let s in res.skipped)
+		print(`skipped: ${s.where}: ${s.message}\n`);
+
+	for (let w in res.warnings)
+		print(`warning: ${w.where}: ${w.message}\n`);
+}
+
+function cmd_apply() {
+	let r = sys.apply();
+	let out = r.result;
+
+	out.firewall = r.gen.firewall;
+	out.listeners = r.gen.listeners;
+	sys.write_last_apply(out);
+	print_problems(out);
+
+	if (out.state == 'disabled') {
+		print('the service is disabled (global.enabled is 0)\n');
+		return 3;
+	}
+
+	if (out.state != 'applied') {
+		if (out.check && !out.check.ok)
+			print(`haproxy -c failed:\n${out.check.output}\n`);
+
+		log('err', `configuration not applied: ${length(out.errors)} error(s)` +
+			((out.check && !out.check.ok) ? ', haproxy -c failed' : '') +
+			'; the running configuration is kept');
+
+		for (let e in out.errors)
+			log('err', `${e.where}: ${e.message}`);
+
+		return 1;
+	}
+
+	for (let s in out.skipped)
+		log('warning', `skipped ${s.where}: ${s.message}`);
+
+	return 0;
+}
+
+function cmd_preview() {
+	let res = generate(sys.load_sections(), sys.collect_env());
+
+	print_problems(res);
+
+	if (res.config != null)
+		print(res.config);
+
+	return res.ok ? 0 : 1;
+}
+
+function cmd_check() {
+	let r = sys.apply({ dry: true });
+
+	print_problems(r.result);
+
+	if (r.result.check) {
+		print(r.result.check.output + '\n');
+		return r.result.check.ok ? 0 : 1;
+	}
+
+	if (r.result.state == 'disabled') {
+		print('the service is disabled; the configuration was generated but not checked\n');
+		return 0;
+	}
+
+	return 1;
+}
+
+function cmd_reload() {
+	let r = sys.master_reload();
+
+	sys.update_last_apply({ runtime: { ok: r.ok, output: r.output, time: time() } });
+
+	if (!r.ok) {
+		log('err', 'HAProxy did not load the new configuration; the old one keeps running');
+		print(r.output + '\n');
+	}
+
+	return r.ok ? 0 : 1;
+}
+
+function cmd_verify_start() {
+	for (let i = 0; i < 20; i++) {
+		if (sys.master_running()) {
+			sys.update_last_apply({ runtime: { ok: true, output: 'HAProxy started', time: time() } });
+			return 0;
+		}
+
+		system('sleep 1');
+	}
+
+	let lines = [];
+	let p = fs.popen('logread -e haproxy-advanced 2>/dev/null | tail -n 20', 'r');
+
+	if (p) {
+		lines = p.read('all');
+		p.close();
+	}
+
+	sys.update_last_apply({ runtime: { ok: false, output: `HAProxy did not start. Recent log:\n${lines}`, time: time() } });
+
+	return 1;
+}
+
+function cmd_interfaces() {
+	let res = generate(sys.load_sections(), {});
+
+	for (let i in res.interfaces)
+		print(i, '\n');
+
+	return 0;
+}
+
+function cmd_firewall() {
+	let last = sys.read_json(sys.LAST_APPLY);
+
+	if (last?.state != 'applied')
+		return 0;
+
+	for (let r in (last.firewall ?? []))
+		print(`${r.listener} ${r.zone} ${r.port} ${r.family}\n`);
+
+	return 0;
+}
+
+function cmd_status() {
+	let pid = trim(fs.readfile(sys.PID_FILE) ?? '');
+
+	print(sprintf('%.2J\n', {
+		running: sys.master_running(),
+		pid: (pid != '') ? +pid : null,
+		last_apply: sys.read_json(sys.LAST_APPLY),
+		stock_haproxy: sys.stock_haproxy_state()
+	}));
+
+	return 0;
+}
+
+const commands = {
+	apply: cmd_apply,
+	preview: cmd_preview,
+	check: cmd_check,
+	reload: cmd_reload,
+	'verify-start': cmd_verify_start,
+	running: () => sys.master_running() ? 0 : 1,
+	interfaces: cmd_interfaces,
+	firewall: cmd_firewall,
+	status: cmd_status
+};
+
+let fn = commands[ARGV[0]];
+
+if (!fn) {
+	warn(`usage: ctl {${join('|', sort(keys(commands)))}}\n`);
+	exit(2);
+}
+
+exit(fn());
