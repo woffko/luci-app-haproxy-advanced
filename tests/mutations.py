@@ -93,6 +93,8 @@ MUTATIONS = [
      R, "push(out, `    ${line} if { var(txn.ha_svc) -m str ${n} }`);", "push(out, `    ${line} if ${h}`);"),
     ("empty request header written as an empty value",
      R, "push(out, `    http-request del-header ${hd.name} if ${h}`);", "push(out, `    http-request set-header ${hd.name} \"\" if ${h}`);"),
+    ("interface addresses bound without transparent",
+     R, "let free = b.iface ? ' transparent' : '';", "let free = '';"),
 ]
 
 

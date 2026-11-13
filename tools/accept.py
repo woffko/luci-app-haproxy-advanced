@@ -545,10 +545,15 @@ def listening(vm, needle):
 
 
 HATEST_NETWORK = """
+config device 'hatest_veth'
+	option type 'veth'
+	option name 'hatest-a'
+	option peer_name 'hatest-b'
+
 config device 'hatest_dev'
 	option name 'br-hatest'
 	option type 'bridge'
-	option bridge_empty '1'
+	list ports 'hatest-a'
 
 config interface 'hatest'
 	option proto 'static'
@@ -601,6 +606,11 @@ config service 'svcd'
                "cp /tmp/network.new /etc/config/network && rm /tmp/network.new && "
                "/etc/init.d/network reload" % vmlib.STAGE, data=HATEST_NETWORK.encode(), timeout=60)
         c.check("hatest comes up", wait_for(lambda: "10.99.99.1" in vm.out("ip -4 addr show br-hatest", check=False), 30) is not None)
+        # The veth peer gives the bridge a carrier, so IPv6 duplicate address
+        # detection can finish as on a real interface.
+        vm.run("ip link set hatest-b up", check=False)
+        c.check("fd99::1 leaves the tentative state", wait_for(lambda: "tentative" not in vm.out(
+            "ip -6 addr show br-hatest", check=False) and "fd99::1" in vm.out("ip -6 addr show br-hatest", check=False), 20) is not None)
 
         cfg = functional_config(iface, zone, crypt_hash(TEST_PASSWORD), extra)
         la = apply_config(vm, cfg)
@@ -614,9 +624,9 @@ config service 'svcd'
         c.check("device listener answers through %s" % iface, r["status"] == 200, r.get("status") or r.get("error"))
 
         v6 = vm.run("printf 'GET /v6 HTTP/1.1\\r\\nHost: svc-c.hatest.example:18444\\r\\nConnection: close\\r\\n\\r\\n' | "
-                    "openssl s_client -connect '[fd99::1]:18444' -servername svc-c.hatest.example -quiet 2>/dev/null",
+                    "openssl s_client -connect '[fd99::1]:18444' -servername svc-c.hatest.example -quiet -ign_eof 2>/dev/null",
                     check=False, timeout=20).stdout.decode(errors="replace")
-        save(out, "ipv6.txt", v6)
+        save(out, "ipv6.txt", v6 + "\n--- ip -6 addr show br-hatest\n" + vm.out("ip -6 addr show br-hatest", check=False))
         c.check("IPv6 request on fd99::1 answers 200", "HTTP/1.1 200" in v6, v6[:300])
 
         vm.run("ifdown hatest")
@@ -655,7 +665,8 @@ config service 'svcd'
         time.sleep(3)
         after = vm.out("sha256sum /etc/config/network")
         c.check("network configuration restored byte for byte", after.split()[0] == (out / "network.orig.sha256").read_text().split()[0], after)
-        c.check("br-hatest removed", wait_for(lambda: vm.run("ip link show br-hatest", check=False).returncode != 0, 15) is not None)
+        c.check("br-hatest and the veth pair removed", wait_for(lambda: all(vm.run("ip link show %s" % d, check=False).returncode != 0
+                                                                   for d in ("br-hatest", "hatest-a", "hatest-b")), 15) is not None)
 
     la = apply_config(vm, functional_config(iface, zone, crypt_hash(TEST_PASSWORD)))
     c.check("back to the functional configuration", la and la["state"] == "applied", la and la.get("state"))

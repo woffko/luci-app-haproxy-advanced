@@ -22,6 +22,11 @@ const AMBIGUOUS_ACL = [
 const DENY_PATH = 'path,url_dec,lower,regsub(;[^/]*,,g)';
 const ALLOW_PATH = 'path,url_dec';
 
+// Addresses taken from an interface may not be usable at the moment HAProxy
+// binds: a fresh IPv6 address is tentative until duplicate address detection
+// ends, and an address can vanish between the snapshot and the reload.
+// 'transparent' (IP_TRANSPARENT/IP_FREEBIND, done while HAProxy still has root)
+// binds anyway; the interface trigger reloads when the address changes.
 function bind_target(b, port) {
 	if (b.device)
 		return `:::${port} v4v6 interface ${b.device}`;
@@ -29,10 +34,12 @@ function bind_target(b, port) {
 	if (b.addr == '::')
 		return (b.family == 'any') ? `:::${port} v4v6` : `:::${port} v6only`;
 
-	if (u.is_ipv6(b.addr))
-		return `ipv6@${b.addr}:${port}`;
+	let free = b.iface ? ' transparent' : '';
 
-	return `${b.addr}:${port}`;
+	if (u.is_ipv6(b.addr))
+		return `ipv6@${b.addr}:${port}${free}`;
+
+	return `${b.addr}:${port}${free}`;
 }
 
 function server_target(v) {
