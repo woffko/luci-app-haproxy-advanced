@@ -81,7 +81,7 @@ Fresh install of the final APKs on the VM, after a cleanup back to the snapshot 
 | browser (final-2, final APKs) | 25 | 0 |
 | measure | 4 | 0 |
 | cleanup (final-2): packages, /etc/config, init scripts, CA bundle, crontab, sockets, nft | 8 | 0 |
-| boot (one reboot, see below) | 13 | 1 (wrong expectation in the test) |
+| boot (one reboot, see below) | 13 | 0 after correcting one check's expectation (1 at run time) |
 | cleanup after the reboot (boot-2) | 7 | 0 |
 
 golden, functional, interfaces and acme ran on the first final build; the second one
@@ -104,12 +104,19 @@ boot-2`.
   procd runs the instance; the procd firewall rule is back in fw4; LuCI through
   HAProxy answers; the companion redirects with 308; a protected path needs a login
   and the login works; no Kea component runs.
-- One check failed: it expected the stock `haproxy` service to be stopped. The feed's
-  haproxy package enables its own service with a sample configuration (ports 81, 444,
-  60000) when it is installed; the install log (`stock-haproxy.json`) shows it enabled
-  and running before the reboot, and it was the same after. By design (F20) the
-  Overview only offers to stop it. The check now compares with the state before the
-  reboot; it was not run again, since the task allows one reboot.
+- At run time one check failed: it expected the stock `haproxy` service to be
+  stopped. That expectation was wrong: the feed's haproxy package enables its own
+  service with a sample configuration (ports 81, 444, 60000) when it is installed,
+  and by design (F20) the Overview only offers to stop it. The check now requires the
+  stock service to be in the same state after the reboot as before it. Since the task
+  allows one reboot, the corrected check was evaluated on the data the run recorded
+  (`logs/accept-boot-1/recheck.json`): **PASS**. Before: enabled and running
+  (`logs/accept-install-boot/stock-haproxy.json`, 7 s before the scenario). After:
+  enabled and running, procd instance on `/etc/haproxy.cfg`, ports 81/444/60000, no
+  overlap with 18443/18080 (`logs/accept-boot-1/stock-after-boot.txt`, read-only
+  command at 04:32:11Z, before the cleanup). Four haproxy processes before and after
+  (`proc-before.txt`, `proc-after.txt`). A fresh run of the corrected scenario
+  needs a second reboot, which only the owner can allow.
 - The first comparison with the snapshot after the reboot differed only in dnsmasq's
   link-local listener on SQM's `ifb4eth1`, which gets a random MAC each time it is
   created (`fe80::547a:7cff:fe98:e64c` → `fe80::6cb9:4dff:fe79:118e`). The cleanup
