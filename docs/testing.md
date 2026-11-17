@@ -35,7 +35,7 @@ every rejected value (`invalid_values`), runtime conditions (`iface_down`,
 
 ### Mutation pass
 
-`tests/mutations.py` applies 32 hand-made mutations to the generator, one at a time,
+`tests/mutations.py` applies 35 hand-made mutations to the generator, one at a time,
 and runs the golden tests on each: the policy order, the deny and allow path forms,
 host matching, forwarding headers, login counting, rate limits, passthrough routing,
 HSTS, redirects, firewall rules, listener conflicts and foreign ports. Every mutation
