@@ -8,7 +8,9 @@ The OpenWrt VM's root password is read from one stdin line (see vmlib.py).
 Every scenario writes its output to logs/accept-SCENARIO-ATTEMPT/.
 """
 
+import hashlib
 import json
+import re
 import sys
 import time
 from pathlib import Path
@@ -675,49 +677,88 @@ config service 'svcd'
 
 @scenario
 def cleanup(vm, out, args):
-    """Remove everything of goal A and compare with a snapshot (args[0]: path of
-    snapshot.json)."""
+    """Remove what this goal installed and compare the VM with a snapshot
+    (args[0]: path of snapshot.json). Only touches what the goal itself added:
+    packages named in this goal's own `apk add` logs and the configuration files
+    of haproxy-advanced and acme when the snapshot did not have them. Other
+    sessions share the VM, so nothing is removed by pattern."""
     c = Checks(out)
     snap = json.loads(Path(args[0]).read_text()) if args else None
     vm.run("/etc/init.d/haproxy-advanced stop 2>/dev/null; /etc/init.d/haproxy-advanced disable 2>/dev/null", check=False)
-    before = set((snap or {}).get("apk", []))
-    now = vm.out("apk list -I 2>/dev/null | sort").splitlines()
-    added = [l.split(" ")[0] for l in now if l not in before]
-    save(out, "added-packages.txt", "\n".join(added) + "\n")
 
-    if added:
-        # apk del by name: strip the version from "name-1.2.3-r4".
-        names = sorted({a.rsplit("-", 2)[0] for a in added})
-        r = vm.run("apk del %s 2>&1" % " ".join(names), check=False, timeout=300)
+    def names(lines):
+        out = set()
+
+        for l in lines:
+            m = re.match(r"^(.*)-(\d[\w.~+]*(?:-r\d+)?) ", l)
+
+            if m:
+                out.add(m.group(1))
+
+        return out
+
+    ours = set()
+
+    for log in list((ROOT / "logs").glob("accept-install-*/apk-add.txt")) + list((ROOT / "logs").glob("accept-browser-*/step-*.txt")):
+        ours |= set(re.findall(r"Installing (\S+) \(", log.read_text(errors="replace")))
+
+    ours |= {"luci-i18n-base-ru", "luci-i18n-haproxy-advanced-ru"}
+    before = names(snap["apk"]) if snap else set()
+    now = names(vm.out("apk list -I 2>/dev/null | sort").splitlines())
+    remove = sorted((now - before) & ours)
+    save(out, "removed-packages.txt", "\n".join(remove) + "\n")
+
+    if remove:
+        r = vm.run("apk del %s 2>&1" % " ".join(remove), check=False, timeout=300)
         save(out, "apk-del.txt", r.stdout.decode(errors="replace"))
+        c.check("apk del of this goal's packages", r.returncode == 0, r.stdout.decode(errors="replace")[-500:])
 
-    vm.run("rm -rf /etc/haproxy/certs /var/etc/haproxy-advanced.cfg* /var/run/haproxy-advanced %s "
-           "/etc/config/haproxy-advanced /etc/config/haproxy-advanced.v01 /etc/config/haproxy-advanced-opkg "
-           "/etc/config/*.apk-new" % vmlib.STAGE, check=False)
+    # Put back the files the packages changed or removed, from the baseline
+    # copy, when that copy has the snapshot's hash.
+    snap_hash = {l.split()[1]: l.split()[0] for l in (snap or {}).get("config_hashes", [])}
+
+    for f in TOUCHED_CONFIGS:
+        want = snap_hash.get(f)
+        b = BASELINE / f
+
+        if not want or not b.exists() or hashlib.sha256(b.read_bytes()).hexdigest() != want:
+            continue
+
+        cur = vm.run("sha256sum /etc/config/%s 2>/dev/null" % f, check=False).stdout.decode().split()
+
+        if not cur or cur[0] != want:
+            mode = {"luci": "644", "openssl": "644"}.get(f, "600")
+            vm.run("cat > /etc/config/%s && chmod %s /etc/config/%s" % (f, mode, f), data=b.read_bytes())
+            print("restored /etc/config/%s from the baseline" % f)
+
+    left = sorted((now - before) - ours)
+
+    if left:
+        print("packages added since the snapshot by someone else, left alone:", left)
+
+    known = {l.split()[-1] for l in (snap or {}).get("config_hashes", [])}
+
+    for f in vm.out("ls /etc/config").split():
+        if f in known:
+            continue
+
+        if re.match(r"^(haproxy-advanced(\.v01|\.apk-new|-opkg)?|acme(\.apk-new)?)$", f):
+            vm.run("rm -f /etc/config/%s" % f, check=False)
+
+    vm.run("rm -rf /etc/haproxy/certs /var/etc/haproxy-advanced.cfg* /var/run/haproxy-advanced %s" % vmlib.STAGE, check=False)
+
+    for d in ("/etc/acme", "/etc/ssl/acme", "/etc/haproxy", "/etc/haproxy.cfg"):
+        if snap and d not in snap["dirs"]:
+            vm.run("rm -rf %s" % d, check=False)
 
     if snap:
-        # Files and directories the packages left behind (modified conffiles,
-        # acme's state, the cron line acme adds when it starts).
-        known = {l.split()[-1] for l in snap["config_hashes"]}
-
-        for f in vm.out("ls /etc/config").split():
-            if f not in known:
-                vm.run("rm -f /etc/config/%s" % f, check=False)
-
-        for d in ("/etc/acme", "/etc/ssl/acme", "/etc/haproxy", "/etc/haproxy.cfg"):
-            if d not in snap["dirs"]:
-                vm.run("rm -rf %s" % d, check=False)
-
-        if vm.out("cat /etc/crontabs/root 2>/dev/null", check=False) != snap["crontab"]:
-            vm.upload(snap["crontab"], vmlib.STAGE + "/crontab")
-            vm.run("cp %s/crontab /etc/crontabs/root && /etc/init.d/cron restart; rm -rf %s" % (vmlib.STAGE, vmlib.STAGE),
-                   check=False)
-
-    if snap:
-        now = vm.out("apk list -I 2>/dev/null | sort").splitlines()
-        c.check("package set as in the snapshot", now == snap["apk"], sorted(set(now) ^ set(snap["apk"])))
+        tokens = lambda lines: sorted(l.split(" ")[0] for l in lines)
+        now_apk = vm.out("apk list -I 2>/dev/null | sort").splitlines()
+        c.check("package set as in the snapshot (name-version)", tokens(now_apk) == tokens(snap["apk"]),
+                sorted(set(tokens(now_apk)) ^ set(tokens(snap["apk"]))))
         hashes = vm.out("cd /etc/config && sha256sum * | sort -k2").splitlines()
-        c.check("/etc/config as in the snapshot", hashes == snap["config_hashes"], sorted(set(hashes) ^ set(snap["config_hashes"])))
+        c.check("/etc/config as in the snapshot", hashes == snap["config_hashes"],
+                sorted(set(hashes) ^ set(snap["config_hashes"])))
         init = vm.out("ls /etc/rc.d | sort").splitlines()
         c.check("enabled init scripts as in the snapshot", init == snap["enabled_init"], sorted(set(init) ^ set(snap["enabled_init"])))
         ca = vm.out("sha256sum /etc/ssl/certs/ca-certificates.crt 2>/dev/null", check=False).strip()
@@ -727,67 +768,9 @@ def cleanup(vm, out, args):
         lst = vm.out("netstat -ltn 2>/dev/null | sort").splitlines()
         c.check("listening sockets as in the snapshot", lst == snap["listening"], sorted(set(lst) ^ set(snap["listening"])))
         nft = vm.out("nft list ruleset")
-        c.check("no haproxy-advanced firewall rule left", "haproxy-advanced" not in nft and "ACME" not in nft)
+        c.check("no haproxy-advanced or ACME firewall rule left", "haproxy-advanced" not in nft and "ACME" not in nft)
 
     return c.finish()
-
-
-PEBBLE_CONFIG = """{
-  "pebble": {
-    "listenAddress": "0.0.0.0:14000",
-    "managementListenAddress": "127.0.0.1:15000",
-    "certificate": "pki/pebble.crt",
-    "privateKey": "pki/pebble.key",
-    "httpPort": 18080,
-    "tlsPort": 18443,
-    "ocspResponderURL": "",
-    "externalAccountBindingRequired": false
-  }
-}
-"""
-
-
-def ubuntu_start(ub, name, command):
-    """Start a background process on the Ubuntu VM in its own session."""
-    # setsid -f returns at once; the child writes its own pid before exec, so
-    # the ssh session does not wait for it.
-    ub.run("cd %s && setsid -f sh -c 'echo $$ > %s/%s.pid; exec %s > %s.log 2>&1 < /dev/null'" % (
-        vmlib.UBUNTU_DIR, vmlib.UBUNTU_DIR, name, command.replace("'", "'\\''"), name), timeout=20)
-
-
-def ubuntu_stop(ub, name):
-    ub.run("f=%s/%s.pid; [ -f $f ] && kill -- -$(cat $f) 2>/dev/null; kill $(cat $f) 2>/dev/null; rm -f $f; true" % (
-        vmlib.UBUNTU_DIR, name), check=False, timeout=20)
-
-
-def served_cert(vm_host, port=vc.TLS_PORT):
-    p = subprocess.run("openssl s_client -connect %s:%d -servername %s </dev/null 2>/dev/null | "
-                       "openssl x509 -noout -issuer -serial" % (vc.VM, port, vm_host),
-                       shell=True, capture_output=True, timeout=20)
-    return p.stdout.decode(errors="replace").strip()
-
-
-def acme_setup(vm, ub, out):
-    ub.upload(PEBBLE_CONFIG, vmlib.UBUNTU_DIR + "/pebble-config.json")
-    ubuntu_stop(ub, "challtestsrv")
-    ubuntu_stop(ub, "pebble")
-    ubuntu_start(ub, "challtestsrv", "./pebble-root/usr/bin/pebble-challtestsrv -defaultIPv4 192.168.189.130 "
-                 "-defaultIPv6 '' -dns01 127.0.0.1:8053 -http01 '' -https01 '' -tlsalpn01 '' -management 127.0.0.1:8055")
-    ubuntu_start(ub, "pebble", "env PEBBLE_VA_NOSLEEP=1 PEBBLE_WFE_NONCEREJECT=0 ./pebble-root/usr/bin/pebble "
-                 "-config pebble-config.json -dnsserver 127.0.0.1:8053")
-    time.sleep(2)
-    save(out, "pebble-start.log", ub.out("cat %s/pebble.log %s/challtestsrv.log" % (vmlib.UBUNTU_DIR, vmlib.UBUNTU_DIR), check=False))
-
-    # Trust the test CA (which signed Pebble's listener certificate) for the test only.
-    vm.run("cp /etc/ssl/certs/ca-certificates.crt %s/ca-bundle.orig && cat %s/pki/ca.crt >> /etc/ssl/certs/ca-certificates.crt"
-           % (vmlib.STAGE, vmlib.STAGE))
-
-
-def acme_teardown(vm, ub):
-    vm.run("[ -f %s/ca-bundle.orig ] && cp %s/ca-bundle.orig /etc/ssl/certs/ca-certificates.crt" % (vmlib.STAGE, vmlib.STAGE), check=False)
-    ubuntu_stop(ub, "pebble")
-    ubuntu_stop(ub, "challtestsrv")
-
 
 @scenario
 def acme(vm, out, args):
@@ -1154,6 +1137,31 @@ config server
     la = apply_config(vm, functional_config(iface, zone, crypt_hash(TEST_PASSWORD)))
     c.check("back to the functional configuration", la and la["state"] == "applied")
     return c.finish()
+
+
+TOUCHED_CONFIGS = ("acme", "socat", "openssl", "luci")
+BASELINE = ROOT / "logs" / "config-baseline"
+
+
+@scenario
+def baseline(vm, out, args):
+    """Before an install: keep the bytes of the /etc/config files that this
+    goal's packages change or remove (acme-common takes over acme, socat and
+    openssl-util remove theirs, luci-i18n-base-ru adds a language to luci).
+    cleanup restores them when their hash differs from the snapshot."""
+    BASELINE.mkdir(parents=True, exist_ok=True)
+
+    for f in TOUCHED_CONFIGS:
+        r = vm.run("cat /etc/config/%s" % f, check=False)
+        p = BASELINE / f
+
+        if r.returncode == 0:
+            p.write_bytes(r.stdout)
+            print("kept /etc/config/%s (%s)" % (f, hashlib.sha256(r.stdout).hexdigest()[:16]))
+        elif p.exists():
+            p.unlink()
+
+    return 0
 
 
 def main():
