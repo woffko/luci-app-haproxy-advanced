@@ -61,6 +61,7 @@ printf '%s\n' "$PW" | tools/accept.py acme 1
 printf '%s\n' "$PW" | tools/accept.py acme-gui 1
 printf '%s\n' "$PW" | tools/accept.py browser 1
 printf '%s\n' "$PW" | tools/accept.py measure 1
+printf '%s\n' "$PW" | tools/accept.py boot 1   # reboots the VM: only with every session's consent
 printf '%s\n' "$PW" | tools/accept.py cleanup 1 logs/accept-snapshot-1/snapshot.json
 ```
 
@@ -74,6 +75,7 @@ printf '%s\n' "$PW" | tools/accept.py cleanup 1 logs/accept-snapshot-1/snapshot.
 | `acme-gui` | the same issue started from the Certificates tab |
 | `browser` | every LuCI step of `tools/browser.js`, with checks on the VM between steps |
 | `measure` | CPU cost of one password check, requests of LuCI served through HAProxy, reload times |
+| `boot` | reboots the VM once; the service starts at boot with its firewall rule and serves |
 | `baseline` | before an install: keeps the configuration files the packages touch |
 | `cleanup` | removes only what this goal installed and compares the VM with the snapshot |
 

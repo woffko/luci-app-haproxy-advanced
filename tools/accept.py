@@ -765,8 +765,14 @@ def cleanup(vm, out, args):
         c.check("CA bundle as in the snapshot", ca == snap["ca_bundle"], ca)
         cron = vm.out("cat /etc/crontabs/root 2>/dev/null", check=False)
         c.check("root crontab as in the snapshot", cron == snap["crontab"], cron)
+        # A reboot gives devices with random MACs (SQM's ifb4eth1) new link-local
+        # addresses, so link-local listeners are compared by count only.
+        def norm(lines):
+            return sorted(re.sub(r"fe80::[0-9a-f:]+:(\d+) ", r"fe80::LL:\1 ", l) for l in lines)
+
         lst = vm.out("netstat -ltn 2>/dev/null | sort").splitlines()
-        c.check("listening sockets as in the snapshot", lst == snap["listening"], sorted(set(lst) ^ set(snap["listening"])))
+        c.check("listening sockets as in the snapshot (link-local by count)", norm(lst) == norm(snap["listening"]),
+                sorted(set(lst) ^ set(snap["listening"])))
         nft = vm.out("nft list ruleset")
         c.check("no haproxy-advanced or ACME firewall rule left", "haproxy-advanced" not in nft and "ACME" not in nft)
 
@@ -1256,6 +1262,112 @@ def acme_gui(vm, out, args):
 
     la = apply_config(vm, functional_config(iface, zone, crypt_hash(TEST_PASSWORD)))
     c.check("back to the functional configuration", la and la["state"] == "applied")
+    return c.finish()
+
+
+LUCI_EXTRA = """
+config service 'luci'
+	option listener 'pub'
+	list hostname 'luci.hatest.example'
+	option backend 'luci_backend'
+	option certificate '/etc/haproxy/certs/svc-c.pem'
+
+config backend 'luci_backend'
+
+config server
+	option backend 'luci_backend'
+	option name 'uhttpd'
+	option address '127.0.0.1'
+	option port '80'
+"""
+
+
+def stock_state(vm):
+    return tuple(vm.run("/etc/init.d/haproxy %s" % a, check=False).returncode == 0 for a in ("enabled", "running"))
+
+
+def proc_names(vm):
+    return sorted(vm.out("for d in /proc/[0-9]*; do cat $d/comm 2>/dev/null; done").split())
+
+
+def boot_id(vm):
+    try:
+        r = vm.run("cat /proc/sys/kernel/random/boot_id", check=False, timeout=20)
+    except subprocess.TimeoutExpired:
+        return None
+
+    return r.stdout.decode().strip() if r.returncode == 0 else None
+
+
+@scenario
+def boot(vm, out, args):
+    """The one consented reboot (task: every other session agreed on
+    2026-11-17): haproxy-advanced starts at boot with the applied
+    configuration, its firewall rule, and serves without a manual step."""
+    c = Checks(out)
+    stage_pki(vm)
+    iface = iface_of(vm, vc.VM)
+    zone = zone_of(vm, iface)
+    la = apply_config(vm, functional_config(iface, zone, crypt_hash(TEST_PASSWORD), LUCI_EXTRA))
+    c.check("configuration applies before the reboot", la and la["state"] == "applied")
+    c.check("init script enabled", vm.run("/etc/init.d/haproxy-advanced enabled", check=False).returncode == 0)
+
+    # Guard: nobody else may be working on the shared VM right now. Busybox-less
+    # ps lists only terminal processes, so read /proc: one dropbear per pid
+    # file (the listeners) plus this session's own.
+    comms = proc_names(vm)
+    save(out, "proc-before.txt", "\n".join(comms))
+    listeners = int(vm.out("ls /var/run/dropbear.*.pid 2>/dev/null | wc -l").strip() or 0)
+    sessions = comms.count("dropbear") - listeners - 1
+    kea = [n for n in comms if n.startswith("kea-")]
+    if not c.check("no other ssh session and no Kea process before the reboot",
+                   sessions == 0 and not kea, "%d other sessions, %s" % (sessions, kea)):
+        return c.finish()
+
+    stock_before = stock_state(vm)
+    old = boot_id(vm)
+    t0 = time.time()
+    try:
+        vm.run("(sleep 1; reboot) >/dev/null 2>&1 &", check=False, timeout=20)
+    except subprocess.TimeoutExpired:
+        pass
+
+    def booted():
+        b = boot_id(vm)
+        return b and b != old
+
+    t = wait_for(booted, 420, 5)
+    c.check("the VM came back with a new boot id", t is not None, t)
+    if t is None:
+        return c.finish()
+
+    t = wait_for(lambda: (last_apply(vm) or {}).get("state") == "applied" and listening(vm, ":18443"), 180, 2)
+    up = vm.out("cat /proc/uptime").split()[0]
+    save(out, "timing.txt", "reboot to ssh+service: %.1f s; uptime when serving: %s s\n" % (time.time() - t0, up))
+    la = last_apply(vm)
+    save(out, "last-apply.json", la)
+    c.check("started at boot: last apply 'applied', HTTPS listener up", t is not None, la)
+    svc = ubus(vm, "service", "list", {"name": "haproxy-advanced"})
+    inst = (svc.get("haproxy-advanced") or {}).get("instances") or {}
+    c.check("procd runs the instance", any(i.get("running") for i in inst.values()), svc)
+    c.check("the firewall rule is back (procd data, fw4)", nft_rules(vm) >= 1, nft_rules(vm))
+    # The feed's haproxy package enables its own service with a sample config
+    # (ports 81, 444, 60000); the Overview offers to stop it (F20). It must be
+    # in the same state as before the reboot and must not take our ports.
+    c.check("the stock haproxy service is as before the reboot",
+            stock_state(vm) == stock_before, (stock_before, stock_state(vm)))
+
+    st = curl_status("luci.hatest.example", "/cgi-bin/luci/")
+    c.check("LuCI through HAProxy answers after the boot", st in (200, 403), st)
+    r = vc.curl(A, "/p?q=1", port=vc.HTTP_PORT, scheme="http")
+    c.check("the HTTP companion redirects after the boot", r.get("status") == 308, r.get("status"))
+    c.check("a protected path still needs a login", curl_status(A, "/other") == 401)
+    c.check("the login works", curl_status(A, "/other", user=AUTH) in (200, 502, 503))
+
+    comms = proc_names(vm)
+    save(out, "proc-after.txt", "\n".join(comms))
+    kea = [n for n in comms if n.startswith("kea-")]
+    c.check("no Kea component runs after the boot (asked by luci-app-kea)", not kea, "\n".join(kea))
     return c.finish()
 
 

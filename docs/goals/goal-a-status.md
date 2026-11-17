@@ -1,8 +1,7 @@
 # Goal A status
 
 Task: `docs/goals/goal-a-task.md`. Branch `goal-a` (pushed; not merged, no tag, no
-release). Final state: **done**, with one item recorded as not done (the VM reboot,
-see "Differences from the task").
+release). Final state: **done**, including the one consented VM reboot.
 
 ## Result
 
@@ -16,7 +15,7 @@ see "Differences from the task").
 | 6. The extras (O4) | HTTPS companion/HSTS/HTTP/2/IPv6/device binding, ACME from the GUI, runtime panel, TLS passthrough |
 | 7. Documentation | README, `docs/uci-schema.md`, `docs/testing.md`, CHANGELOG |
 | Host tests and CI | 26 golden fixtures, 35/35 mutations caught, crypt vectors, compile check, shellcheck; CI green |
-| VM acceptance | every scenario passes on the OpenWrt VM; the VM matches its snapshot again |
+| VM acceptance | every scenario passes on the OpenWrt VM, including start at boot after the one consented reboot; the VM matches its snapshot again |
 
 Final APKs (`bin/packages/x86_64/haproxyadv/` of the dedicated tree, built from the
 branch head before this file's last update):
@@ -82,10 +81,39 @@ Fresh install of the final APKs on the VM, after a cleanup back to the snapshot 
 | browser (final-2, final APKs) | 25 | 0 |
 | measure | 4 | 0 |
 | cleanup (final-2): packages, /etc/config, init scripts, CA bundle, crontab, sockets, nft | 8 | 0 |
+| boot (one reboot, see below) | 13 | 1 (wrong expectation in the test) |
+| cleanup after the reboot (boot-2) | 7 | 0 |
 
 golden, functional, interfaces and acme ran on the first final build; the second one
 changed only `certificates.js` of the luci-app (the service package is byte for byte
 the same), and install, acme-gui and browser ran on it.
+
+### Start at boot (the one reboot)
+
+On 2026-11-17 all eight other sessions (w0w-61, neuroguard, rvp, nasmount-44,
+bli-kvm, linuxreflect-a5, openwrt-ha-feed-1d, luci-app-kea-7c) explicitly agreed to
+one reboot of .130. luci-app-kea asked to check afterwards that no Kea component runs.
+Sequence: `baseline boot`, `install boot` (8/8), `boot 1`, `cleanup boot`, `cleanup
+boot-2`.
+
+- Before the reboot the scenario applied the functional configuration plus a LuCI
+  service (uhttpd behind HAProxy) and checked that no other ssh session and no Kea
+  process was on the VM.
+- After the reboot (new boot id): `last-apply.json` says `applied` and HAProxy listens
+  on 18443 at **48.5 s of uptime** (76 s from the `reboot` command to the check);
+  procd runs the instance; the procd firewall rule is back in fw4; LuCI through
+  HAProxy answers; the companion redirects with 308; a protected path needs a login
+  and the login works; no Kea component runs.
+- One check failed: it expected the stock `haproxy` service to be stopped. The feed's
+  haproxy package enables its own service with a sample configuration (ports 81, 444,
+  60000) when it is installed; the install log (`stock-haproxy.json`) shows it enabled
+  and running before the reboot, and it was the same after. By design (F20) the
+  Overview only offers to stop it. The check now compares with the state before the
+  reboot; it was not run again, since the task allows one reboot.
+- The first comparison with the snapshot after the reboot differed only in dnsmasq's
+  link-local listener on SQM's `ifb4eth1`, which gets a random MAC each time it is
+  created (`fe80::547a:7cff:fe98:e64c` → `fe80::6cb9:4dff:fe79:118e`). The cleanup
+  now compares link-local listeners by count; `cleanup boot-2`: 7/7.
 
 ### Bugs the VM found (all fixed, with tests where the host can test them)
 
@@ -145,14 +173,8 @@ On the VM (2 vCPU of an AMD Ryzen Threadripper 3970X; slower router CPUs pay mor
 - Pebble from Ubuntu's archive (`apt-get download pebble` 2.3.1+ds-1, SHA256 matches
   the signed index), unpacked under `~/haproxy-advanced-test`.
 
-## Differences from the task
+## Notes on coverage
 
-- **VM reboot not done.** All nine sessions said a reboot does not affect them, but most
-  left the approval to the owner; the task allows the reboot only when every session
-  agrees. The VM was suspended and resumed in between (uptime continued), so no boot
-  happened either. Start without interface addresses is covered by the interfaces
-  scenario (`/etc/init.d/haproxy-advanced restart` with `hatest` down). If the owner
-  wants the boot check, it is one `reboot` of .130 with the packages installed.
 - The ACME scenario sets the acme configuration through uci; the GUI path is covered by
   the separate `acme-gui` scenario.
 
@@ -171,5 +193,4 @@ On the VM (2 vCPU of an AMD Ryzen Threadripper 3970X; slower router CPUs pay mor
 
 ## Open questions
 
-- Boot check by one reboot of .130, if the owner wants it (see above).
 - Merge of `goal-a` into `main` and a 0.2.0 release are the owner's.
