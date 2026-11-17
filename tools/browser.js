@@ -231,6 +231,23 @@ const steps = {
 		await page.waitForTimeout(3000);
 	},
 
+	// Issue an ACME certificate for svca from the Certificates tab, against the
+	// Pebble server on the Ubuntu VM. The page reloads after the apply.
+	async 'acme-issue'(page) {
+		await open(page, 'certificates');
+		await page.locator('button', { hasText: 'Issue a certificate for a service' }).click();
+		await page.waitForSelector('.modal');
+		await page.locator('.modal select').first().selectOption('svca');
+		await page.locator('.modal input[type=email]').fill('hostmaster@hatest.example');
+		await page.locator('.modal input[placeholder]').last().fill('https://192.168.189.142:14000/dir');
+		await shot(page, 'acme-issue-dialog');
+		await page.locator('.modal .cbi-button-positive', { hasText: 'Save and issue' }).click();
+		await page.waitForSelector('text=Configuration changes applied.', { timeout: 120000 });
+		await page.waitForLoadState('domcontentloaded');
+		await page.waitForTimeout(3000);
+		await shot(page, 'acme-issue-applied');
+	},
+
 	async russian(page) {
 		await open(page, 'overview');
 		const text = await page.locator('body').innerText();

@@ -87,10 +87,12 @@ return view.extend({
 
 			uci.set(common.CONFIG, svc, 'acme_cert', cert);
 
+			// Save and apply at once: this page has no Save & Apply button, and the
+			// acme package starts the issue when its configuration is applied.
 			return uci.save().then(() => {
 				ui.hideModal();
-				ui.addNotification(null, E('p', _('Certificate %s is prepared. Save & Apply starts the issue; the service starts using the certificate as soon as it exists.').format(cert)), 'info');
-				window.setTimeout(() => window.location.reload(), 1500);
+				ui.addNotification(null, E('p', _('Certificate %s: the issue starts now. The service uses the certificate as soon as it exists; "Show ACME log" shows the progress.').format(cert)), 'info');
+				return ui.changes.apply(true);
 			});
 		};
 
@@ -103,7 +105,7 @@ return view.extend({
 			err,
 			E('div', { 'class': 'right' }, [
 				E('button', { 'class': 'btn', 'click': ui.hideModal }, _('Cancel')), ' ',
-				E('button', { 'class': 'btn cbi-button-positive', 'click': ui.createHandlerFn(this, create) }, _('Prepare'))
+				E('button', { 'class': 'btn cbi-button-positive', 'click': ui.createHandlerFn(this, create) }, _('Save and issue'))
 			])
 		]);
 	},

@@ -51,12 +51,16 @@ server. Output goes to `logs/accept-SCENARIO-ATTEMPT/`.
 tools/testpki.sh                                # test-only CA and certificates
 printf '%s\n' "$PW" | tools/accept.py probe 1
 printf '%s\n' "$PW" | tools/accept.py snapshot 1
+printf '%s\n' "$PW" | tools/accept.py baseline 1
 printf '%s\n' "$PW" | tools/accept.py install 1
+printf '%s\n' "$PW" | tools/accept.py backends 1        # 'backends 1 stop' stops them
 printf '%s\n' "$PW" | tools/accept.py golden 1  # haproxy -c of every golden config
 printf '%s\n' "$PW" | tools/accept.py functional 1
 printf '%s\n' "$PW" | tools/accept.py interfaces 1
 printf '%s\n' "$PW" | tools/accept.py acme 1
-printf '%s\n' "$PW" | node tools/browser.js STEP logs/browser-1
+printf '%s\n' "$PW" | tools/accept.py acme-gui 1
+printf '%s\n' "$PW" | tools/accept.py browser 1
+printf '%s\n' "$PW" | tools/accept.py measure 1
 printf '%s\n' "$PW" | tools/accept.py cleanup 1 logs/accept-snapshot-1/snapshot.json
 ```
 
@@ -67,7 +71,14 @@ printf '%s\n' "$PW" | tools/accept.py cleanup 1 logs/accept-snapshot-1/snapshot.
 | `functional` | requests through HAProxy: empty POST bodies, late bodies, routing by Host and SNI, host with a port, every path bypass form, forwarding headers, HTTP/2, the HTTP companion's redirect, passthrough beside HTTPS services, WebSocket idle, rate and failed-login limits, the runtime panel, the staged preview, a failing apply that keeps the running configuration, the firewall rule |
 | `interfaces` | a listener on a test interface follows `ifdown`, `ifup` and address changes; device binding; IPv6 |
 | `acme` | issue and forced renewal through the HTTP companion with Pebble; HAProxy serves the new certificate |
-| `cleanup` | removes everything and compares the VM with the snapshot |
+| `acme-gui` | the same issue started from the Certificates tab |
+| `browser` | every LuCI step of `tools/browser.js`, with checks on the VM between steps |
+| `measure` | CPU cost of one password check, requests of LuCI served through HAProxy, reload times |
+| `baseline` | before an install: keeps the configuration files the packages touch |
+| `cleanup` | removes only what this goal installed and compares the VM with the snapshot |
+
+The VMs are shared with other projects: ask the other sessions before a run, and never
+remove files by pattern there.
 
 The measurements of the last acceptance run are in
 [docs/goals/goal-a-status.md](goals/goal-a-status.md).

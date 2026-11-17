@@ -40,10 +40,16 @@ async function run(context, label) {
 
 	page.on('request', () => { times.push(Date.now()); count++; });
 
-	await page.goto(BASE, { waitUntil: 'networkidle' });
-	await page.fill('input[name=luci_username]', 'root');
-	await page.fill('input[name=luci_password]', password);
-	await Promise.all([ page.waitForLoadState('networkidle'), page.press('input[name=luci_password]', 'Enter') ]);
+	const resp = await page.goto(BASE, { waitUntil: 'networkidle' });
+
+	console.log(label, 'first load', resp && resp.status());
+	// The warm run reuses the logged-in session, so the form may be absent.
+	if (await page.locator('input[name=luci_username]').count()) {
+		await page.fill('input[name=luci_username]', 'root');
+		await page.fill('input[name=luci_password]', password);
+		await Promise.all([ page.waitForLoadState('networkidle'), page.press('input[name=luci_password]', 'Enter') ]);
+	}
+
 	perPage.push([ 'login', count ]);
 
 	for (const p of PAGES) {

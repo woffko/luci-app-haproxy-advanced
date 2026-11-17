@@ -78,7 +78,7 @@ msgid ""
 "custom rules, trusted networks, internal-only paths, public paths, login."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:142
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:144
 msgid "ACME (Let's Encrypt)"
 msgstr ""
 
@@ -120,7 +120,7 @@ msgstr ""
 msgid "Access"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:100
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:102
 msgid "Account e-mail"
 msgstr ""
 
@@ -268,7 +268,7 @@ msgstr ""
 msgid "CA"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:105
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:107
 #: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:189
 #: htdocs/luci-static/resources/view/haproxy-advanced/services.js:390
 msgid "Cancel"
@@ -278,10 +278,10 @@ msgstr ""
 msgid "Certificate"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:92
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:94
 msgid ""
-"Certificate %s is prepared. Save & Apply starts the issue; the service "
-"starts using the certificate as soon as it exists."
+"Certificate %s: the issue starts now. The service uses the certificate as "
+"soon as it exists; \"Show ACME log\" shows the progress."
 msgstr ""
 
 #: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:153
@@ -297,7 +297,7 @@ msgstr ""
 msgid "Certificates"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:134
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:136
 msgid ""
 "Certificates HAProxy can serve: PEM files that hold the chain and the "
 "private key, in /etc/haproxy/certs and /etc/ssl/acme. Key contents are never "
@@ -355,7 +355,7 @@ msgstr ""
 msgid "Custom rules"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:178
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:180
 msgid ""
 "DNS validation and wildcard certificates: use the ACME page of luci-app-"
 "acme; the certificates it issues appear in this list and can be chosen in a "
@@ -403,7 +403,7 @@ msgstr ""
 msgid "Do not check the certificate (private network)"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:157
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:159
 msgid "Domains"
 msgstr ""
 
@@ -411,7 +411,7 @@ msgstr ""
 msgid "Drain (no new clients)"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:102
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:104
 msgid "Empty for Let's Encrypt."
 msgstr ""
 
@@ -513,7 +513,7 @@ msgstr ""
 msgid "Expecting an interface name, an IP address or *"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:137
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:139
 msgid "Expires"
 msgstr ""
 
@@ -545,11 +545,11 @@ msgstr ""
 msgid "Fewest connections"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:137
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:139
 msgid "File"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:136
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:138
 msgid "Files"
 msgstr ""
 
@@ -624,7 +624,7 @@ msgstr ""
 msgid "HAProxy Advanced: backends"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:133
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:135
 msgid "HAProxy Advanced: certificates"
 msgstr ""
 
@@ -781,7 +781,7 @@ msgstr ""
 msgid "Include subdomains"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:145
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:147
 msgid ""
 "Install the acme-acmesh package (apk add acme-acmesh) to issue certificates "
 "from here. For DNS validation use the ACME page of luci-app-acme."
@@ -801,11 +801,11 @@ msgstr ""
 msgid "Interval"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:97
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:99
 msgid "Issue a certificate"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:161
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:163
 msgid "Issue a certificate for a service…"
 msgstr ""
 
@@ -840,7 +840,7 @@ msgstr ""
 msgid "Let's Encrypt"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:100
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:102
 #: htdocs/luci-static/resources/view/haproxy-advanced/services.js:135
 msgid "Let's Encrypt sends expiry notices here."
 msgstr ""
@@ -960,7 +960,7 @@ msgid "NAS / file sharing"
 msgstr ""
 
 #: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:134
-#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:157
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:159
 #: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:71
 #: htdocs/luci-static/resources/view/haproxy-advanced/services.js:373
 msgid "Name"
@@ -993,11 +993,11 @@ msgstr ""
 msgid "New password"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:158
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:160
 msgid "No ACME certificate yet."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:138
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:140
 msgid "No certificate file found."
 msgstr ""
 
@@ -1011,7 +1011,7 @@ msgid ""
 "one."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:171
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:173
 #: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:216
 #: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:254
 msgid "No log lines."
@@ -1094,7 +1094,7 @@ msgstr ""
 msgid "Order"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:102
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:104
 msgid "Other ACME server"
 msgstr ""
 
@@ -1148,10 +1148,6 @@ msgstr ""
 msgid "Port"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:106
-msgid "Prepare"
-msgstr ""
-
 #: htdocs/luci-static/resources/view/haproxy-advanced/services.js:372
 msgid "Preset"
 msgstr ""
@@ -1201,7 +1197,7 @@ msgstr ""
 msgid "Refresh"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:167
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:169
 msgid "Renew now"
 msgstr ""
 
@@ -1247,6 +1243,10 @@ msgstr ""
 
 #: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:169
 msgid "SNI"
+msgstr ""
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:108
+msgid "Save and issue"
 msgstr ""
 
 #: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:195
@@ -1296,7 +1296,7 @@ msgstr ""
 msgid "Servers"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:99
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:101
 #: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:223
 #: htdocs/luci-static/resources/view/haproxy-advanced/services.js:419
 #: htdocs/luci-static/resources/view/haproxy-advanced/services.js:622
@@ -1346,7 +1346,7 @@ msgid ""
 "keeps the running one in place."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:174
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:176
 msgid "Show ACME log"
 msgstr ""
 
@@ -1354,11 +1354,11 @@ msgstr ""
 msgid "Shown in the browser's login window."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:101
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:103
 msgid "Staging server"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:157
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:159
 msgid "State"
 msgstr ""
 
@@ -1420,7 +1420,7 @@ msgstr ""
 msgid "Terminate HTTPS here, or pass TLS through for passthrough services."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:101
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:103
 msgid ""
 "Test certificates that browsers do not trust; use this to try the setup."
 msgstr ""
@@ -1435,7 +1435,7 @@ msgid ""
 "haproxy -c. Nothing is applied here; Save & Apply does that."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:98
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:100
 msgid ""
 "The certificate covers all host names of the service. While it is issued, "
 "acme.sh answers the challenge on the local ACME port and the listener's HTTP "
@@ -1535,8 +1535,8 @@ msgstr ""
 msgid "Use at least 8 characters."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:137
-#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:157
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:139
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:159
 msgid "Used by"
 msgstr ""
 
@@ -1559,7 +1559,7 @@ msgstr ""
 msgid "Users"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:157
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:159
 msgid "Validation"
 msgstr ""
 
@@ -1631,7 +1631,7 @@ msgid ""
 "rights."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:152
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:154
 msgid "issued"
 msgstr ""
 
@@ -1647,11 +1647,11 @@ msgstr ""
 msgid "none"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:152
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:154
 msgid "not issued yet"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:128
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:130
 msgid "not loaded by HAProxy"
 msgstr ""
 
@@ -1692,7 +1692,7 @@ msgstr ""
 msgid "running the new configuration"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:151
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:153
 msgid "staging"
 msgstr ""
 

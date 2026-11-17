@@ -430,4 +430,7 @@ RU = {
 "New password": "Новый пароль",
 "Or an existing hash": "Или готовый хеш",
 "Set a password.": "Задайте пароль.",
+"Certificate %s: the issue starts now. The service uses the certificate as soon as it exists; \"Show ACME log\" shows the progress.":
+ "Сертификат %s: выпуск начинается. Сервис начнёт использовать сертификат, как только он появится; ход выпуска показывает «Показать журнал ACME».",
+"Save and issue": "Сохранить и выпустить",
 }

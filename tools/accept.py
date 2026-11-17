@@ -772,6 +772,63 @@ def cleanup(vm, out, args):
 
     return c.finish()
 
+PEBBLE_CONFIG = """{
+  "pebble": {
+    "listenAddress": "0.0.0.0:14000",
+    "managementListenAddress": "127.0.0.1:15000",
+    "certificate": "pki/pebble.crt",
+    "privateKey": "pki/pebble.key",
+    "httpPort": 18080,
+    "tlsPort": 18443,
+    "ocspResponderURL": "",
+    "externalAccountBindingRequired": false
+  }
+}
+"""
+
+
+def ubuntu_start(ub, name, command):
+    """Start a background process on the Ubuntu VM in its own session."""
+    # setsid -f returns at once; the child writes its own pid before exec, so
+    # the ssh session does not wait for it.
+    ub.run("cd %s && setsid -f sh -c 'echo $$ > %s/%s.pid; exec %s > %s.log 2>&1 < /dev/null'" % (
+        vmlib.UBUNTU_DIR, vmlib.UBUNTU_DIR, name, command.replace("'", "'\\''"), name), timeout=20)
+
+
+def ubuntu_stop(ub, name):
+    ub.run("f=%s/%s.pid; [ -f $f ] && kill -- -$(cat $f) 2>/dev/null; kill $(cat $f) 2>/dev/null; rm -f $f; true" % (
+        vmlib.UBUNTU_DIR, name), check=False, timeout=20)
+
+
+def served_cert(vm_host, port=vc.TLS_PORT):
+    p = subprocess.run("openssl s_client -connect %s:%d -servername %s </dev/null 2>/dev/null | "
+                       "openssl x509 -noout -issuer -serial" % (vc.VM, port, vm_host),
+                       shell=True, capture_output=True, timeout=20)
+    return p.stdout.decode(errors="replace").strip()
+
+
+def acme_setup(vm, ub, out):
+    ub.upload(PEBBLE_CONFIG, vmlib.UBUNTU_DIR + "/pebble-config.json")
+    ubuntu_stop(ub, "challtestsrv")
+    ubuntu_stop(ub, "pebble")
+    ubuntu_start(ub, "challtestsrv", "./pebble-root/usr/bin/pebble-challtestsrv -defaultIPv4 192.168.189.130 "
+                 "-defaultIPv6 '' -dns01 127.0.0.1:8053 -http01 '' -https01 '' -tlsalpn01 '' -management 127.0.0.1:8055")
+    ubuntu_start(ub, "pebble", "env PEBBLE_VA_NOSLEEP=1 PEBBLE_WFE_NONCEREJECT=0 ./pebble-root/usr/bin/pebble "
+                 "-config pebble-config.json -dnsserver 127.0.0.1:8053")
+    time.sleep(2)
+    save(out, "pebble-start.log", ub.out("cat %s/pebble.log %s/challtestsrv.log" % (vmlib.UBUNTU_DIR, vmlib.UBUNTU_DIR), check=False))
+
+    # Trust the test CA (which signed Pebble's listener certificate) for the test only.
+    vm.run("cp /etc/ssl/certs/ca-certificates.crt %s/ca-bundle.orig && cat %s/pki/ca.crt >> /etc/ssl/certs/ca-certificates.crt"
+           % (vmlib.STAGE, vmlib.STAGE))
+
+
+def acme_teardown(vm, ub):
+    vm.run("[ -f %s/ca-bundle.orig ] && cp %s/ca-bundle.orig /etc/ssl/certs/ca-certificates.crt" % (vmlib.STAGE, vmlib.STAGE), check=False)
+    ubuntu_stop(ub, "pebble")
+    ubuntu_stop(ub, "challtestsrv")
+
+
 @scenario
 def acme(vm, out, args):
     """ACME through the HTTP companion with Pebble on the Ubuntu VM."""
@@ -1162,6 +1219,44 @@ def baseline(vm, out, args):
             p.unlink()
 
     return 0
+
+
+@scenario
+def acme_gui(vm, out, args):
+    """ACME issue started from the Certificates tab (tools/browser.js
+    acme-issue) for svca, validated by Pebble through the HTTP companion."""
+    c = Checks(out)
+    ub = vmlib.Ubuntu()
+    stage_pki(vm)
+    iface = iface_of(vm, vc.VM)
+    zone = zone_of(vm, iface)
+    host = "svc-a.hatest.example"
+    la = apply_config(vm, functional_config(iface, zone, crypt_hash(TEST_PASSWORD)))
+    c.check("functional configuration applies", la and la["state"] == "applied")
+    before = served_cert(host)
+    c.check("before: svc-a serves the test-CA certificate", "haproxy-advanced test CA" in before, before)
+    acme_setup(vm, ub, out)
+
+    try:
+        ok, t = node_step(vm, "acme-issue", out)
+        c.check("Issue dialog: Save and issue applies the change", ok, t)
+        save(out, "acme-uci.txt", vm.out("uci show acme; uci -q get haproxy-advanced.svca.acme_cert", check=False))
+        path = "/etc/ssl/acme/%s.combined.crt" % host
+        t = wait_for(lambda: vm.run("test -s %s" % path, check=False).returncode == 0, 240, 3)
+        save(out, "acme.log", vm.out("logread -e acme | tail -n 60", check=False))
+        c.check("the acme package issued the certificate (config trigger)", t is not None, t)
+        t2 = wait_for(lambda: "Pebble" in served_cert(host), 90, 3)
+        after = served_cert(host)
+        save(out, "served.txt", after)
+        c.check("svc-a now serves the Pebble certificate", t2 is not None, after)
+        r = vc.curl(A, "/share/acme")
+        c.check("svc-a answers with the new certificate", r["status"] == 200, r.get("status"))
+    finally:
+        acme_teardown(vm, ub)
+
+    la = apply_config(vm, functional_config(iface, zone, crypt_hash(TEST_PASSWORD)))
+    c.check("back to the functional configuration", la and la["state"] == "applied")
+    return c.finish()
 
 
 def main():
