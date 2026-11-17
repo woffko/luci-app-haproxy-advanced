@@ -1003,6 +1003,159 @@ def browser(vm, out, args):
     return c.finish()
 
 
+@scenario
+def backends(vm, out, args):
+    """Start (or with 'stop', stop) the test backends on the Ubuntu VM."""
+    ub = vmlib.Ubuntu()
+    ub.upload((ROOT / "tools/ubuntu_servers.py").read_bytes(), vmlib.UBUNTU_DIR + "/servers.py")
+
+    for name in ("backend.pem", "passthrough.pem", "pebble.crt", "pebble.key", "ca.crt"):
+        ub.upload((PKI / name).read_bytes(), "%s/pki/%s" % (vmlib.UBUNTU_DIR, name), mode="600")
+
+    ubuntu_stop(ub, "servers")
+
+    if args and args[0] == "stop":
+        print("backends stopped")
+        return 0
+
+    ubuntu_start(ub, "servers", "python3 -I servers.py pki")
+    time.sleep(2)
+    up = ub.out("ss -ltn | grep -cE ':(19080|19081|19443|19444) '", check=False).strip()
+    print("backends listening on %s of 4 ports" % up)
+    return 0 if up == "4" else 1
+
+
+MEASURE_H6 = "$6$lhB0kwyr7FuLqRj8$9mT69LBIlGbpVp6aFA9DJMZbhpP2WsdsHHob2sah6bXpu2emKUTLmUU68n5honAYlXAtuYGQEzEEz58xRJ7kF0"
+MEASURE_HB = "$2b$10$DHFc/s5cOncHd8qFesatOOooBivXW74AmmDcSkZJegINSfnII2GgO"
+MEASURE_PW = "measure-pass-1"
+
+
+def worker_cpu_ms(vm):
+    """utime + stime of this service's HAProxy processes, in ms."""
+    txt = vm.out("for p in $(pgrep -f haproxy-advanced.cfg); do cat /proc/$p/stat; done", check=False)
+    tick = 100
+    total = 0
+
+    for line in txt.splitlines():
+        f = line.rsplit(")", 1)[1].split()
+        total += int(f[11]) + int(f[12])
+
+    return total * 1000.0 / tick
+
+
+def auth_batch(vm, path, user, n):
+    url = "https://svc-a.hatest.example:18443" + path
+    argv = ["curl", "-sk", "--http1.1", "-m", "120", "--resolve", "svc-a.hatest.example:18443:192.168.189.130",
+            "-w", "%{http_code}\n"]
+
+    if user:
+        argv += ["-u", user]
+
+    for _ in range(n):
+        argv += ["-o", "/dev/null", url]
+
+    c0 = worker_cpu_ms(vm)
+    t0 = time.time()
+    p = subprocess.run(argv, capture_output=True, text=True, timeout=300)
+    wall = time.time() - t0
+    cpu = worker_cpu_ms(vm) - c0
+    return {"requests": n, "wall_s": round(wall, 2), "cpu_ms": round(cpu, 1),
+            "cpu_ms_per_request": round(cpu / n, 2), "statuses": sorted(set(p.stdout.split()))}
+
+
+@scenario
+def measure(vm, out, args):
+    """Numbers for the status file: the CPU cost of one password check, the
+    requests a real web UI (LuCI through HAProxy) sends, and reload times."""
+    c = Checks(out)
+    stage_pki(vm)
+    iface = iface_of(vm, vc.VM)
+    zone = zone_of(vm, iface)
+    extra = """
+config user
+	option group 'family'
+	option username 'm6'
+	option password_hash '%s'
+
+config user
+	option group 'family'
+	option username 'mbc'
+	option password_hash '%s'
+
+config service 'luci'
+	option listener 'pub'
+	list hostname 'luci.hatest.example'
+	option backend 'luci_backend'
+	option certificate '/etc/haproxy/certs/svc-c.pem'
+
+config backend 'luci_backend'
+
+config server
+	option backend 'luci_backend'
+	option name 'uhttpd'
+	option address '127.0.0.1'
+	option port '80'
+""" % (MEASURE_H6, MEASURE_HB)
+    la = apply_config(vm, functional_config(iface, zone, crypt_hash(TEST_PASSWORD), extra))
+    c.check("measurement configuration applies", la and la["state"] == "applied", la and la.get("errors"))
+    time.sleep(2)
+    res = {"cpu": vm.out("grep -m1 'model name' /proc/cpuinfo").strip(),
+           "cores": vm.out("grep -c ^processor /proc/cpuinfo").strip()}
+
+    # Password checks: compare the worker CPU of logged-in requests with
+    # requests that need no login.
+    runs = {"no_login": [], "sha512_5000": [], "bcrypt_10": []}
+
+    for _ in range(3):
+        runs["no_login"].append(auth_batch(vm, "/share/x", None, 100))
+        runs["sha512_5000"].append(auth_batch(vm, "/x", "m6:" + MEASURE_PW, 100))
+        runs["bcrypt_10"].append(auth_batch(vm, "/x", "mbc:" + MEASURE_PW, 20))
+
+    best = {k: min(r["cpu_ms_per_request"] for r in v) for k, v in runs.items()}
+    res["auth_runs"] = runs
+    res["auth_cpu_ms_per_request"] = best
+    res["sha512_5000_check_ms"] = round(best["sha512_5000"] - best["no_login"], 2)
+    res["bcrypt_10_check_ms"] = round(best["bcrypt_10"] - best["no_login"], 2)
+    c.check("logins with both hashes succeed", all(r["statuses"] == ["200"] for k in ("sha512_5000", "bcrypt_10")
+                                                     for r in runs[k]), runs)
+
+    # A real web UI through HAProxy.
+    p = subprocess.run(["node", str(ROOT / "tools/pageload.js"), str(out)], input=vm.password + b"\n",
+                       capture_output=True, timeout=600)
+    save(out, "pageload.txt", p.stdout.decode() + p.stderr.decode())
+    pl = json.loads((out / "pageload.json").read_text()) if (out / "pageload.json").exists() else None
+    res["pageload"] = pl
+    c.check("LuCI through HAProxy loads", p.returncode == 0 and pl, p.stderr.decode()[-300:])
+
+    # Reload times.
+    times = []
+
+    for _ in range(5):
+        t0 = time.time()
+        vm.run("/etc/init.d/haproxy-advanced reload", check=False, timeout=120)
+        times.append(round(time.time() - t0, 2))
+
+    base = []
+
+    for _ in range(5):
+        t0 = time.time()
+        vm.run("true")
+        base.append(time.time() - t0)
+
+    res["reload_seconds"] = times
+    res["ssh_round_trip_seconds"] = round(min(base), 2)
+    save(out, "measurements.json", res)
+    print(json.dumps({k: v for k, v in res.items() if k not in ("auth_runs", "pageload")}, indent=1))
+
+    if pl:
+        print("pageload cold total/max10s:", pl["cold"]["total"], pl["cold"]["max_in_10s"],
+              "warm:", pl["warm"]["total"], pl["warm"]["max_in_10s"])
+
+    la = apply_config(vm, functional_config(iface, zone, crypt_hash(TEST_PASSWORD)))
+    c.check("back to the functional configuration", la and la["state"] == "applied")
+    return c.finish()
+
+
 def main():
     if len(sys.argv) < 2 or sys.argv[1] not in SCENARIOS:
         print(__doc__)
