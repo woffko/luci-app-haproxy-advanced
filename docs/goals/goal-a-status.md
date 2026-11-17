@@ -1,7 +1,8 @@
 # Goal A status
 
 Task: `docs/goals/goal-a-task.md`. Branch `goal-a` (pushed; not merged, no tag, no
-release). Final state: **done**, including the one consented VM reboot.
+release). Final state: **done**, including the start-at-boot check (two consented VM reboots:
+the task's one, and a second one the owner allowed to rerun a corrected check).
 
 ## Result
 
@@ -15,7 +16,7 @@ release). Final state: **done**, including the one consented VM reboot.
 | 6. The extras (O4) | HTTPS companion/HSTS/HTTP/2/IPv6/device binding, ACME from the GUI, runtime panel, TLS passthrough |
 | 7. Documentation | README, `docs/uci-schema.md`, `docs/testing.md`, CHANGELOG |
 | Host tests and CI | 26 golden fixtures, 35/35 mutations caught, crypt vectors, compile check, shellcheck; CI green |
-| VM acceptance | every scenario passes on the OpenWrt VM, including start at boot after the one consented reboot; the VM matches its snapshot again |
+| VM acceptance | every scenario passes on the OpenWrt VM, including start at boot (`boot 2`: 13/13); the VM matches its snapshot again |
 
 Final APKs (`bin/packages/x86_64/haproxyadv/` of the dedicated tree, built from the
 branch head before this file's last update):
@@ -64,6 +65,7 @@ daa55fc6a8fb9b29960ce4f3f8bafee9cb0b07aea2e319f1c804d754e4a3532d  luci-i18n-hapr
 - 2026-11-13: the owner allowed taking the VM's root password from the encrypted
   test-asset store of cake-autorate-rs; it reached ssh only through stdin.
 - 2026-11-17: the owner started the VM again after it had been suspended.
+- 2026-11-17: the owner allowed a second reboot of .130 to rerun the corrected boot check.
 
 ## Final VM acceptance
 
@@ -81,14 +83,15 @@ Fresh install of the final APKs on the VM, after a cleanup back to the snapshot 
 | browser (final-2, final APKs) | 25 | 0 |
 | measure | 4 | 0 |
 | cleanup (final-2): packages, /etc/config, init scripts, CA bundle, crontab, sockets, nft | 8 | 0 |
-| boot (one reboot, see below) | 13 | 0 after correcting one check's expectation (1 at run time) |
-| cleanup after the reboot (boot-2) | 7 | 0 |
+| boot 1 (first reboot, see below) | 13 | 1 (wrong expectation in the test) |
+| boot 2 (second reboot, corrected check) | 13 | 0 |
+| cleanup after boot 2 (boot2) | 8 | 0 |
 
 golden, functional, interfaces and acme ran on the first final build; the second one
 changed only `certificates.js` of the luci-app (the service package is byte for byte
 the same), and install, acme-gui and browser ran on it.
 
-### Start at boot (the one reboot)
+### Start at boot (two reboots)
 
 On 2026-11-17 all eight other sessions (w0w-61, neuroguard, rvp, nasmount-44,
 bli-kvm, linuxreflect-a5, openwrt-ha-feed-1d, luci-app-kea-7c) explicitly agreed to
@@ -109,14 +112,21 @@ boot-2`.
   service with a sample configuration (ports 81, 444, 60000) when it is installed,
   and by design (F20) the Overview only offers to stop it. The check now requires the
   stock service to be in the same state after the reboot as before it. Since the task
-  allows one reboot, the corrected check was evaluated on the data the run recorded
-  (`logs/accept-boot-1/recheck.json`): **PASS**. Before: enabled and running
+  allowed one reboot, the corrected check was first evaluated on the data the run
+  recorded (`logs/accept-boot-1/recheck.json`): **PASS**. Before: enabled and running
   (`logs/accept-install-boot/stock-haproxy.json`, 7 s before the scenario). After:
   enabled and running, procd instance on `/etc/haproxy.cfg`, ports 81/444/60000, no
   overlap with 18443/18080 (`logs/accept-boot-1/stock-after-boot.txt`, read-only
   command at 04:32:11Z, before the cleanup). Four haproxy processes before and after
-  (`proc-before.txt`, `proc-after.txt`). A fresh run of the corrected scenario
-  needs a second reboot, which only the owner can allow.
+  (`proc-before.txt`, `proc-after.txt`).
+- **boot 2**: the owner then allowed a second reboot to run the corrected scenario on
+  the VM; all eight sessions agreed again. Sequence: `baseline boot2`, `install
+  boot2` (8/8), `boot 2`, `cleanup boot2`. Result **13/13**: service applied and
+  listening at 64.6 s of uptime (92 s from the `reboot` command), procd instance,
+  fw4 rule, stock service enabled and running before and after, LuCI, redirect,
+  login, no Kea component. `cleanup boot2`: 8/8. Afterwards the Kea reference state
+  of the luci-app-kea session matched (313 packages, md5 of `/etc/config/dhcp` and
+  both Kea configurations, `/var/lib/kea` empty, no Kea process).
 - The first comparison with the snapshot after the reboot differed only in dnsmasq's
   link-local listener on SQM's `ifb4eth1`, which gets a random MAC each time it is
   created (`fe80::547a:7cff:fe98:e64c` → `fe80::6cb9:4dff:fe79:118e`). The cleanup

@@ -1301,7 +1301,8 @@ def boot_id(vm):
 
 @scenario
 def boot(vm, out, args):
-    """The one consented reboot (task: every other session agreed on
+    """Reboots the shared VM, so run it only after every other session
+    agrees (the task allows one reboot; the owner allowed a second one on
     2026-11-17): haproxy-advanced starts at boot with the applied
     configuration, its firewall rule, and serves without a manual step."""
     c = Checks(out)
