@@ -82,10 +82,17 @@ make package/feeds/haproxyadv/haproxy-advanced/compile \
      package/feeds/haproxyadv/luci-app-haproxy-advanced/compile
 ```
 
-Copy the two `.apk` files to the router and install them:
+Or download them from the
+[GitHub releases](https://github.com/woffko/luci-app-haproxy-advanced/releases): the
+packages are architecture-independent and work on any OpenWrt 25.12 target. They are
+not signed with an OpenWrt key, so `apk` needs `--allow-untrusted`.
+
+Copy the two `.apk` files to the router and install them, and the Russian translation
+if you want it:
 
 ```sh
 apk add --allow-untrusted haproxy-advanced-*.apk luci-app-haproxy-advanced-*.apk
+apk add --allow-untrusted luci-i18n-haproxy-advanced-ru-*.apk   # optional
 ```
 
 Then open **Services → HAProxy Advanced → Services → Add service…**.

@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.0 (unreleased)
+## 0.2.0 (2026-11-18)
 
 A rewrite. 0.1 configurations are not converted: the service refuses to start on
 one, and the GUI offers to move it to `/etc/config/haproxy-advanced.v01`.

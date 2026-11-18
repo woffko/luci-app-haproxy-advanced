@@ -1,7 +1,7 @@
 # Goal A status
 
-Task: `docs/goals/goal-a-task.md`. Branch `goal-a` (pushed; not merged, no tag, no
-release). Final state: **done**, including the start-at-boot check (two consented VM reboots:
+Task: `docs/goals/goal-a-task.md`. Branch `goal-a`. The goal itself did not merge or
+release; on 2026-11-18 the owner allowed the merge into `main` and the 0.2.0 release. Final state: **done**, including the start-at-boot check (two consented VM reboots:
 the task's one, and a second one the owner allowed to rerun a corrected check).
 
 ## Result
@@ -210,4 +210,4 @@ On the VM (2 vCPU of an AMD Ryzen Threadripper 3970X; slower router CPUs pay mor
 
 ## Open questions
 
-- Merge of `goal-a` into `main` and a 0.2.0 release are the owner's.
+- None. The owner allowed the merge into `main` and the 0.2.0 release (2026-11-18).
