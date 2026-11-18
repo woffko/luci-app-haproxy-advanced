@@ -84,7 +84,7 @@ make package/feeds/haproxyadv/haproxy-advanced/compile \
 
 Or download them from the
 [GitHub releases](https://github.com/woffko/luci-app-haproxy-advanced/releases): the
-packages are architecture-independent and work on any OpenWrt 25.12 target. They are
+packages are architecture-independent (tested on OpenWrt 25.12, x86_64). They are
 not signed with an OpenWrt key, so `apk` needs `--allow-untrusted`.
 
 Copy the two `.apk` files to the router and install them, and the Russian translation
