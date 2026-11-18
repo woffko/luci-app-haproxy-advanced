@@ -1,0 +1,264 @@
+// SPDX-License-Identifier: MIT
+// rpcd methods of luci-app-haproxy-advanced. Every server-side action of the
+// GUI goes through this object; the ACL in
+// /usr/share/rpcd/acl.d/luci-app-haproxy-advanced.json lists exactly these
+// methods.
+
+'use strict';
+
+import * as fs from 'fs';
+import * as sys from '/usr/share/haproxy-advanced/system.uc';
+import { generate, VERSION } from '/usr/share/haproxy-advanced/core.uc';
+import { cursor } from 'uci';
+
+const INIT = '/etc/init.d/haproxy-advanced';
+const LEGACY_BACKUP = '/etc/config/haproxy-advanced.v01';
+const CERT_DIRS = [ '/etc/ssl/acme', '/etc/haproxy/certs' ];
+
+function run(cmd) {
+	let p = fs.popen(cmd + ' 2>&1', 'r');
+
+	if (!p)
+		return { code: -1, output: `cannot run: ${fs.error()}` };
+
+	let output = p.read('all') ?? '';
+	let code = p.close();
+
+	return { code, output: trim(output) };
+}
+
+function legacy_present(sections) {
+	for (let s in sections)
+		if (s['.type'] in [ 'frontend', 'bind', 'acl', 'action', 'userlist' ])
+			return true;
+
+	return false;
+}
+
+// "Not After" of a certificate HAProxy has loaded, as a Unix time.
+function cert_expiry(path) {
+	let out = sys.stats_command(`show ssl cert ${path}`);
+	let m = match(out ?? '', /notAfter: ([^\n]+)/i);
+
+	if (!m)
+		return null;
+
+	return trim(m[1]);
+}
+
+const methods = {
+	status: {
+		call: function() {
+			let sections = sys.load_sections();
+			let g = filter(sections, (s) => s['.type'] == 'global')[0];
+			let pid = trim(fs.readfile(sys.PID_FILE) ?? '');
+
+			return {
+				version: VERSION,
+				enabled: g?.enabled == '1',
+				running: sys.master_running(),
+				pid: (pid != '') ? +pid : null,
+				last_apply: sys.read_json(sys.LAST_APPLY),
+				stock_haproxy: sys.stock_haproxy_state(),
+				legacy_config: legacy_present(sections),
+				uhttpd_ports: sys.uhttpd_ports(),
+				acme_installed: !!fs.access('/etc/init.d/acme') && !!fs.access('/usr/lib/acme/client/acme.sh')
+			};
+		}
+	},
+
+	// The configuration of the current unsaved LuCI changes, checked with
+	// haproxy -c. rpcd passes the caller's session as ubus_rpc_session.
+	preview: {
+		args: { check: true },
+		call: function(req) {
+			let savedir = sys.session_savedir(req.args?.ubus_rpc_session);
+			let res = generate(sys.load_sections(savedir), sys.collect_env());
+			let out = {
+				ok: res.ok,
+				enabled: res.enabled,
+				staged: savedir != null,
+				config: res.config,
+				errors: res.errors,
+				warnings: res.warnings,
+				skipped: res.skipped,
+				check: null
+			};
+
+			if (res.ok && req.args?.check !== false)
+				out.check = sys.haproxy_check(res.config);
+
+			return out;
+		}
+	},
+
+	runtime: {
+		call: function() {
+			let rows = sys.show_stat();
+
+			if (rows == null)
+				return { running: false, rows: [] };
+
+			let out = [];
+
+			for (let r in rows) {
+				push(out, {
+					proxy: r.pxname,
+					name: r.svname,
+					type: +r.type,
+					status: r.status,
+					check: r.check_status,
+					check_desc: r.check_desc,
+					weight: r.weight,
+					scur: +r.scur,
+					stot: +r.stot,
+					rate: +r.rate,
+					req_rate: +(r.req_rate ?? 0),
+					hrsp_4xx: +(r.hrsp_4xx ?? 0),
+					hrsp_5xx: +(r.hrsp_5xx ?? 0),
+					lastchg: +(r.lastchg ?? 0)
+				});
+			}
+
+			return { running: true, rows: out };
+		}
+	},
+
+	set_server: {
+		args: { backend: 'backend', server: 'server', state: 'state' },
+		call: function(req) {
+			let b = req.args?.backend, s = req.args?.server, st = req.args?.state;
+
+			if (!match(b ?? '', /^[A-Za-z0-9_]{1,48}$/) || !match(s ?? '', /^[A-Za-z0-9_.-]{1,48}$/) ||
+			    !(st in [ 'ready', 'drain', 'maint' ]))
+				return { ok: false, output: 'invalid arguments' };
+
+			let out = sys.stats_command(`set server be_${b}/${s} state ${st}`);
+
+			if (out == null)
+				return { ok: false, output: 'HAProxy is not running' };
+
+			return { ok: trim(out) == '', output: trim(out) };
+		}
+	},
+
+	certificates: {
+		call: function() {
+			let files = [];
+
+			for (let d in CERT_DIRS) {
+				for (let f in sort(fs.lsdir(d) ?? [])) {
+					if (!match(f, /\.(pem|crt|cer)$/) || match(f, /\.key$/))
+						continue;
+
+					// Only files that hold a certificate and a key can be served.
+					if (d == '/etc/ssl/acme' && !match(f, /\.combined\.crt$/))
+						continue;
+
+					let p = `${d}/${f}`;
+					let st = fs.stat(p);
+
+					if (st?.type != 'file' && st?.type != 'link')
+						continue;
+
+					push(files, { path: p, mtime: st.mtime, expires: cert_expiry(p) });
+				}
+			}
+
+			let acme = [];
+			let account_email = null;
+			let c = cursor();
+
+			if (fs.access('/etc/config/acme')) {
+				c.load('acme');
+
+				c.foreach('acme', 'acme', (s) => { account_email = s.account_email; });
+				c.foreach('acme', 'cert', (s) => {
+					let d = s.domains;
+					let domains = (type(d) == 'array') ? d : (d ? split(d, /[ ]+/) : []);
+					let path = length(domains) ? `/etc/ssl/acme/${lc(domains[0])}.combined.crt` : null;
+
+					push(acme, {
+						name: s['.name'],
+						enabled: s.enabled != '0',
+						domains,
+						validation_method: s.validation_method,
+						staging: s.staging == '1',
+						path,
+						issued: path ? !!fs.access(path) : false
+					});
+				});
+			}
+
+			return { files, acme, account_email };
+		}
+	},
+
+	acme_renew: {
+		call: function() {
+			if (!fs.access('/etc/init.d/acme'))
+				return { ok: false, output: 'acme-acmesh is not installed' };
+
+			let r = run('/etc/init.d/acme renew');
+
+			return { ok: r.code == 0, output: r.output };
+		}
+	},
+
+	acme_log: {
+		call: function() {
+			let r = run("logread -e 'acme' | tail -n 80");
+
+			return { output: r.output };
+		}
+	},
+
+	logs: {
+		call: function() {
+			let r = run('logread -e haproxy-advanced | tail -n 200');
+
+			return { output: r.output };
+		}
+	},
+
+	reload: {
+		call: function() {
+			let r = run(`${INIT} reload`);
+
+			return { ok: r.code == 0, output: r.output, last_apply: sys.read_json(sys.LAST_APPLY) };
+		}
+	},
+
+	stock_haproxy_disable: {
+		call: function() {
+			if (!fs.access('/etc/init.d/haproxy'))
+				return { ok: false, output: 'the haproxy init script is not installed' };
+
+			let a = run('/etc/init.d/haproxy stop');
+			let b = run('/etc/init.d/haproxy disable');
+
+			return { ok: b.code == 0, output: trim(a.output + '\n' + b.output), state: sys.stock_haproxy_state() };
+		}
+	},
+
+	// Decision O3 of goal A: 0.1 configurations are not converted. Move the old
+	// file aside and start from an empty configuration.
+	legacy_backup: {
+		call: function() {
+			if (!legacy_present(sys.load_sections()))
+				return { ok: false, output: 'the configuration is not a 0.1 configuration' };
+
+			let old = fs.readfile('/etc/config/haproxy-advanced');
+
+			if (old == null || !fs.writefile(LEGACY_BACKUP, old))
+				return { ok: false, output: `cannot write ${LEGACY_BACKUP}: ${fs.error()}` };
+
+			fs.writefile('/etc/config/haproxy-advanced',
+				"config global 'global'\n\toption enabled '0'\n\toption hardening '1'\n");
+
+			return { ok: true, output: `The old configuration is in ${LEGACY_BACKUP}.` };
+		}
+	}
+};
+
+return { 'luci.haproxy-advanced': methods };

@@ -1,0 +1,28 @@
+config global 'global'
+	option enabled '1'
+	option hardening '0'
+
+config listener 'pub'
+	option port '443'
+
+config service 'files'
+	option listener 'pub'
+	list hostname 'files.example.com'
+	option backend 'b'
+	option certificate '/c/a.pem'
+	list internal_path '/Admin/'
+	list public_path '/share/'
+
+config service 'plain'
+	option listener 'pub'
+	list hostname 'plain.example.com'
+	option backend 'b'
+	option certificate '/c/a.pem'
+
+config backend 'b'
+
+config server
+	option backend 'b'
+	option name 's'
+	option address '192.168.1.2'
+	option port '80'

@@ -1,0 +1,14 @@
+config global 'global'
+	option enabled '1'
+
+config listener 'pub'
+	list address 'wan6x'
+	option port '443'
+
+config service 'a'
+	option listener 'pub'
+	list hostname 'a.example.com'
+	option backend 'b'
+	option certificate '/c/a.pem'
+
+config backend 'b'

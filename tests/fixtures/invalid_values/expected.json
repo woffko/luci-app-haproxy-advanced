@@ -1,0 +1,305 @@
+{
+  "ok": false,
+  "errors": [
+    {
+      "where": "global",
+      "message": "enabled: 'maybe' is not 0 or 1"
+    },
+    {
+      "where": "global",
+      "message": "maxconn: '-1' is not a whole number up to 1000000"
+    },
+    {
+      "where": "global",
+      "message": "log_level: 'loud' is not one of emerg, alert, crit, err, warning, notice, info, debug"
+    },
+    {
+      "where": "global",
+      "message": "timeout_client: '10 s' is not a time (examples: 500ms, 10s, 5m, 1h)"
+    },
+    {
+      "where": "global",
+      "message": "acme_challenge_port: '70000' is not a port"
+    },
+    {
+      "where": "global",
+      "message": "advanced line 'backend evil': 'backend' would start a new section"
+    },
+    {
+      "where": "global",
+      "message": "advanced line 'stats socket /tmp/x': the service owns the stats socket"
+    },
+    {
+      "where": "global",
+      "message": "advanced line 'user root': the service sets 'user' itself"
+    },
+    {
+      "where": "listener l1",
+      "message": "port: '0' is not a port"
+    },
+    {
+      "where": "listener l1",
+      "message": "redirect_port: '0' is not a port"
+    },
+    {
+      "where": "listener l1",
+      "message": "firewall_zone: 'w-a-n' is not a zone name"
+    },
+    {
+      "where": "listener l1",
+      "message": "default_certificate: '/etc/../shadow' is not an absolute path of plain characters"
+    },
+    {
+      "where": "listener l1",
+      "message": "address: 'eth 0' is not an interface name, an IP address or *"
+    },
+    {
+      "where": "listener l1",
+      "message": "address: '300.1.1.1' is not an interface name, an IP address or *"
+    },
+    {
+      "where": "listener l2",
+      "message": "redirect_port needs a TLS listener"
+    },
+    {
+      "where": "listener l3",
+      "message": "redirect_port must differ from port"
+    },
+    {
+      "where": "listener l3",
+      "message": "bind_mode device needs interface names in address"
+    },
+    {
+      "where": "service bad",
+      "message": "mode: 'tunnel' is not one of http, passthrough"
+    },
+    {
+      "where": "service bad",
+      "message": "hostname: 'Bad_Host.example.com' is not a host name (wildcards are not supported)"
+    },
+    {
+      "where": "service bad",
+      "message": "hostname: '*.example.com' is not a host name (wildcards are not supported)"
+    },
+    {
+      "where": "service bad",
+      "message": "at least one hostname is required"
+    },
+    {
+      "where": "service bad",
+      "message": "trusted_network: '10.0.0.0/33' is not an IPv4 or IPv6 address or network"
+    },
+    {
+      "where": "service bad",
+      "message": "trusted_network: 'lan' is not an IPv4 or IPv6 address or network"
+    },
+    {
+      "where": "service bad",
+      "message": "blocked_path: 'cgi-bin/' must start with /"
+    },
+    {
+      "where": "service bad",
+      "message": "blocked_path: '/a b/' contains characters that are not allowed (write the decoded path; no spaces, %, quotes, $, # or \\)"
+    },
+    {
+      "where": "service bad",
+      "message": "blocked_path: '/a%20b/' contains characters that are not allowed (write the decoded path; no spaces, %, quotes, $, # or \\)"
+    },
+    {
+      "where": "service bad",
+      "message": "blocked_path: '/x/../y/' contains //, /./ or /../"
+    },
+    {
+      "where": "service bad",
+      "message": "blocked_path: '/#frag' contains characters that are not allowed (write the decoded path; no spaces, %, quotes, $, # or \\)"
+    },
+    {
+      "where": "service bad",
+      "message": "internal_path: '//double' contains //, /./ or /../"
+    },
+    {
+      "where": "service bad",
+      "message": "public_path: '/$HOME/' contains characters that are not allowed (write the decoded path; no spaces, %, quotes, $, # or \\)"
+    },
+    {
+      "where": "service bad",
+      "message": "rate_limit: 'many' is not a whole number up to 1000000"
+    },
+    {
+      "where": "service bad",
+      "message": "hsts_max_age: '-5' is not a whole number up to 1000000000"
+    },
+    {
+      "where": "service bad",
+      "message": "timeout_client: '1 hour' is not a time (examples: 500ms, 10s, 5m, 1h)"
+    },
+    {
+      "where": "service bad",
+      "message": "advanced line 'http-request deny if TRUE': service lines may not have a condition; the service adds its own"
+    },
+    {
+      "where": "service bad",
+      "message": "advanced line 'tcp-request content reject': service lines must be http-request, http-response or http-after-response rules"
+    },
+    {
+      "where": "service bad",
+      "message": "hardening: 'sometimes' is not empty, 0 or 1"
+    },
+    {
+      "where": "service bad",
+      "message": "request_header: 'X-Test: \"quoted\"' must be 'Name: value' with a plain value (no quotes, \\, $ or %)"
+    },
+    {
+      "where": "service bad",
+      "message": "request_header: 'Bad Header: v' must be 'Name: value' with a plain value (no quotes, \\, $ or %)"
+    },
+    {
+      "where": "service bad",
+      "message": "request_header: 'X-Pct: 100%' must be 'Name: value' with a plain value (no quotes, \\, $ or %)"
+    },
+    {
+      "where": "service bad",
+      "message": "certificate: 'relative.pem' is not an absolute path of plain characters"
+    },
+    {
+      "where": "service bad",
+      "message": "acme_cert: 'bad-name' is not a section name"
+    },
+    {
+      "where": "service h2",
+      "message": "at least one hostname is required"
+    },
+    {
+      "where": "rule #1 of service ghost",
+      "message": "service 'ghost' does not exist"
+    },
+    {
+      "where": "rule #2 of service bad",
+      "message": "source: 'x' is not an IPv4 or IPv6 address or network"
+    },
+    {
+      "where": "rule #2 of service bad",
+      "message": "deny_status: '418' is not one of 400, 401, 403, 404, 405, 429, 500, 503"
+    },
+    {
+      "where": "rule #2 of service bad",
+      "message": "action is required (allow, deny or auth)"
+    },
+    {
+      "where": "rule #2 of service bad",
+      "message": "method: 'FETCH' is not a known HTTP method"
+    },
+    {
+      "where": "service bad",
+      "message": "backend 'nope' does not exist"
+    },
+    {
+      "where": "service pt",
+      "message": "passthrough needs a TLS listener; 'l2' has tls off"
+    },
+    {
+      "where": "backend shared",
+      "message": "balance: 'random' is not one of roundrobin, leastconn, source, first"
+    },
+    {
+      "where": "backend shared",
+      "message": "timeout_tunnel: 'forever' is not a time (examples: 500ms, 10s, 5m, 1h)"
+    },
+    {
+      "where": "backend shared",
+      "message": "advanced line 'listen x': 'listen' would start a new section"
+    },
+    {
+      "where": "backend shared",
+      "message": "check_path: 'status' is not a path"
+    },
+    {
+      "where": "backend shared",
+      "message": "check_host: 'bad host' is not a host name"
+    },
+    {
+      "where": "backend shared",
+      "message": "check_status: use codes like 200 or classes like 2xx"
+    },
+    {
+      "where": "server dup of backend shared",
+      "message": "weight: '300' is not a whole number up to 256"
+    },
+    {
+      "where": "server dup of backend shared",
+      "message": "address: 'bad address' is not an IP address or host name"
+    },
+    {
+      "where": "server dup of backend shared",
+      "message": "port: '99999' is not a port"
+    },
+    {
+      "where": "server dup of backend shared",
+      "message": "verify required needs ca_file (a CA file, or @system-ca for public certificates)"
+    },
+    {
+      "where": "server dup of backend shared",
+      "message": "sni: 'bad sni' is not a host name or 'host'"
+    },
+    {
+      "where": "server dup of backend shared",
+      "message": "verifyhost: 'x y' is not a host name"
+    },
+    {
+      "where": "server dup of backend shared",
+      "message": "ca_file: 'ca.pem' is not a path or @system-ca"
+    },
+    {
+      "where": "server dup of backend shared",
+      "message": "server name 'dup' appears twice in backend 'shared'"
+    },
+    {
+      "where": "server #4 of backend shared",
+      "message": "name is required: 1-48 letters, digits, ., _ or -"
+    },
+    {
+      "where": "server #4 of backend shared",
+      "message": "port is required"
+    },
+    {
+      "where": "service h",
+      "message": "listener 'missing' does not exist"
+    },
+    {
+      "where": "service h2",
+      "message": "backend 'shared' is used by both HTTP and passthrough services; give each kind its own backend"
+    },
+    {
+      "where": "service h2",
+      "message": "certificate or acme_cert is required on TLS listener 'l3'"
+    }
+  ],
+  "warnings": [
+    {
+      "where": "user x",
+      "message": "group 'none' does not exist, so this user is not used"
+    },
+    {
+      "where": "server g of backend ghost",
+      "message": "backend 'ghost' does not exist, so this server is not used"
+    },
+    {
+      "where": "rule #1 of service ghost",
+      "message": "the rule has no criteria and matches every request"
+    },
+    {
+      "where": "rule #2 of service bad",
+      "message": "the rule has no criteria and matches every request"
+    },
+    {
+      "where": "listener l1",
+      "message": "no enabled service uses this listener, so it is not started"
+    }
+  ],
+  "skipped": [
+  ],
+  "firewall": [
+  ],
+  "interfaces": [
+  ]
+}

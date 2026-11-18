@@ -1,0 +1,17 @@
+{
+  "ok": false,
+  "errors": [
+    {
+      "where": "configuration",
+      "message": "/etc/config/haproxy-advanced cannot be read: Parse error (section of different type overwrites prior section with same name)"
+    }
+  ],
+  "warnings": [
+  ],
+  "skipped": [
+  ],
+  "firewall": [
+  ],
+  "interfaces": [
+  ]
+}

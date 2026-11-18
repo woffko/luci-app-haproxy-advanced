@@ -1,0 +1,27 @@
+#!/bin/sh
+# Compile every ucode file of both packages with the host ucode. Target-only
+# modules (uci, ubus, socket) are replaced by stubs, and the absolute
+# /usr/share/haproxy-advanced imports are pointed at this checkout.
+set -eu
+UCODE=${UCODE:-ucode}
+ROOT=$(cd "$(dirname "$0")/.." && pwd)
+TMP=$(mktemp -d)
+trap 'rm -rf "$TMP"' EXIT
+LIB="$ROOT/haproxy-advanced/files/ucode"
+# Stubs of the target-only modules, so imports resolve at compile time.
+mkdir -p "$TMP/stubs"
+echo 'export function cursor() {};' > "$TMP/stubs/uci.uc"
+echo 'export function connect() {};' > "$TMP/stubs/ubus.uc"
+printf 'export function connect() {};\nexport const SOL_SOCKET = 1;\nexport const SO_RCVTIMEO = 20;\n' > "$TMP/stubs/socket.uc"
+rc=0
+for f in "$ROOT/haproxy-advanced/files/haproxy-advanced-ctl" \
+         "$ROOT/luci-app-haproxy-advanced/root/usr/share/rpcd/ucode/luci.haproxy-advanced"; do
+	sed "s#/usr/share/haproxy-advanced/#$LIB/#g" "$f" > "$TMP/check.uc"
+	if "$UCODE" -c -L "$TMP/stubs/*.uc" -o "$TMP/out" "$TMP/check.uc"; then
+		echo "ok   ${f#"$ROOT"/}"
+	else
+		echo "FAIL ${f#"$ROOT"/}"
+		rc=1
+	fi
+done
+exit $rc

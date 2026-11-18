@@ -1,0 +1,56 @@
+config global 'global'
+	option enabled '1'
+
+config listener 'public'
+	list address 'wan'
+	option port '443'
+	option redirect_port '80'
+	option firewall '1'
+
+config service 'nas'
+	option listener 'public'
+	list hostname 'NAS.example.com'
+	option backend 'nas'
+	option certificate '/etc/haproxy/certs/nas.pem'
+	list trusted_network '192.168.20.0/24'
+	list blocked_path '/cgi-bin/'
+	list internal_path '/admin/'
+	list public_path '/share/'
+	option auth_group 'family'
+	option rate_limit '300'
+	option hsts '1'
+
+config service 'ha'
+	option listener 'public'
+	list hostname 'ha.example.com'
+	option backend 'ha'
+	option certificate '/etc/haproxy/certs/ha.pem'
+	option hardening '0'
+
+config backend 'nas'
+	option health_check 'http'
+	option check_path '/status'
+
+config server
+	option backend 'nas'
+	option name 'nas1'
+	option address '192.168.10.2'
+	option port '443'
+	option tls '1'
+
+config backend 'ha'
+	option timeout_tunnel '1h'
+
+config server
+	option backend 'ha'
+	option name 'ha1'
+	option address '192.168.10.3'
+	option port '8123'
+
+config auth_group 'family'
+	option realm 'Family NAS'
+
+config user
+	option group 'family'
+	option username 'alice'
+	option password_hash '$6$saltsalt$abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ./abcdefghijklmnopqrstuvwxyz0123'

@@ -1,0 +1,19 @@
+config global 'global'
+	option enabled '1'
+
+config listener 'pub'
+	option port '443'
+
+config service 'a'
+	option listener 'pub'
+	list hostname 'x.example.com'
+	option backend 'b'
+	option certificate '/c/a.pem'
+
+config service 'b'
+	option listener 'pub'
+	list hostname 'X.example.com'
+	option backend 'b'
+	option certificate '/c/a.pem'
+
+config backend 'b'

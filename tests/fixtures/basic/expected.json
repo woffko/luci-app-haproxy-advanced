@@ -1,0 +1,26 @@
+{
+  "ok": true,
+  "errors": [
+  ],
+  "warnings": [
+  ],
+  "skipped": [
+  ],
+  "firewall": [
+    {
+      "listener": "public",
+      "zone": "wan",
+      "port": 443,
+      "family": "ipv4"
+    },
+    {
+      "listener": "public",
+      "zone": "wan",
+      "port": 80,
+      "family": "ipv4"
+    }
+  ],
+  "interfaces": [
+    "wan"
+  ]
+}

@@ -1,0 +1,137 @@
+config global 'global'
+	option enabled 'maybe'
+	option maxconn '-1'
+	option log_level 'loud'
+	option timeout_client '10 s'
+	option acme_challenge_port '70000'
+	option advanced 'backend evil
+stats socket /tmp/x
+user root
+nbthread 2'
+
+config listener 'l1'
+	list address 'eth 0'
+	list address '300.1.1.1'
+	option port '0'
+	option redirect_port '0'
+	option firewall_zone 'w-a-n'
+	option default_certificate '/etc/../shadow'
+
+config listener 'l2'
+	option port '443'
+	option tls '0'
+	option redirect_port '80'
+
+config listener 'l3'
+	list address '*'
+	option bind_mode 'device'
+	option port '444'
+	option redirect_port '444'
+
+config service 'bad'
+	option listener 'l2'
+	list hostname 'Bad_Host.example.com'
+	list hostname '*.example.com'
+	option backend 'nope'
+	option mode 'tunnel'
+	list trusted_network '10.0.0.0/33'
+	list trusted_network 'lan'
+	list blocked_path 'cgi-bin/'
+	list blocked_path '/a b/'
+	list blocked_path '/a%20b/'
+	list blocked_path '/x/../y/'
+	list blocked_path '/#frag'
+	list internal_path '//double'
+	list public_path '/$HOME/'
+	option rate_limit 'many'
+	option hardening 'sometimes'
+	option hsts_max_age '-5'
+	option timeout_client '1 hour'
+	list request_header 'X-Test: "quoted"'
+	list request_header 'Bad Header: v'
+	list request_header 'X-Pct: 100%'
+	option certificate 'relative.pem'
+	option acme_cert 'bad-name'
+	option auth_group 'nobody'
+	option advanced 'http-request deny if TRUE
+tcp-request content reject'
+
+config service 'pt'
+	option listener 'l2'
+	list hostname 'pt.example.com'
+	option mode 'passthrough'
+	option backend 'shared'
+
+config service 'h'
+	option listener 'missing'
+	list hostname 'h.example.com'
+	option backend 'shared'
+
+config service 'h2'
+	option listener 'l3'
+	option backend 'shared'
+
+config backend 'shared'
+	option balance 'random'
+	option health_check 'http'
+	option check_path 'status'
+	option check_status '600'
+	option check_host 'Bad Host'
+	option timeout_tunnel 'forever'
+	option advanced 'listen x'
+
+config server
+	option backend 'shared'
+	option name 'dup'
+	option address 'bad address'
+	option port '99999'
+	option tls '1'
+	option verify 'required'
+	option sni 'bad sni'
+	option verifyhost 'x y'
+	option weight '300'
+
+config server
+	option backend 'shared'
+	option name 'dup'
+	option address '192.168.1.5'
+	option port '80'
+	option ca_file 'ca.pem'
+
+config server
+	option backend 'ghost'
+	option name 'g'
+	option address '192.168.1.6'
+	option port '80'
+
+config server
+	option backend 'shared'
+	option address '192.168.1.7'
+
+config auth_group 'grp'
+	option realm 'Say "hi" $USER'
+
+config user
+	option group 'grp'
+	option username 'bad user'
+	option password_hash 'plain'
+
+config user
+	option group 'grp'
+	option username 'ok'
+	option password_hash 'plaintext'
+
+config user
+	option group 'none'
+	option username 'x'
+	option password_hash '$6$a$b'
+
+config rule
+	option service 'ghost'
+	option action 'deny'
+
+config rule
+	option service 'bad'
+	option method 'FETCH'
+	list source 'x'
+	option deny_status '418'

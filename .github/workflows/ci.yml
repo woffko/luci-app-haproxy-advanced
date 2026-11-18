@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    env:
+      # The ucode commit of OpenWrt 25.12.4 (package/utils/ucode).
+      UCODE_COMMIT: 85922056ef7abeace3cca3ab28bc1ac2d88e31b1
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: sudo apt-get update && sudo apt-get install -y cmake libjson-c-dev shellcheck
+
+      - name: Build ucode
+        run: |
+          git clone https://github.com/jow-/ucode.git "$RUNNER_TEMP/ucode"
+          git -C "$RUNNER_TEMP/ucode" checkout "$UCODE_COMMIT"
+          cmake -S "$RUNNER_TEMP/ucode" -B "$RUNNER_TEMP/ucode/build" \
+            -DFS_SUPPORT=ON -DMATH_SUPPORT=ON -DSTRUCT_SUPPORT=ON \
+            -DUBUS_SUPPORT=OFF -DUCI_SUPPORT=OFF -DULOOP_SUPPORT=OFF \
+            -DRTNL_SUPPORT=OFF -DNL80211_SUPPORT=OFF -DRESOLV_SUPPORT=OFF \
+            -DLOG_SUPPORT=OFF -DDIGEST_SUPPORT=OFF -DZLIB_SUPPORT=OFF \
+            -DSOCKET_SUPPORT=OFF -DDEBUG_SUPPORT=OFF
+          cmake --build "$RUNNER_TEMP/ucode/build" -j
+          sudo cmake --install "$RUNNER_TEMP/ucode/build"
+          sudo ldconfig
+          echo "UCODE=$(command -v ucode)" >> "$GITHUB_ENV"
+
+      - name: Golden tests
+        run: '"$UCODE" tests/run.uc'
+
+      - name: Mutation pass
+        run: python3 -I tests/mutations.py
+
+      - name: Compile all ucode
+        run: tests/syntax.sh
+
+      - name: Browser-side SHA-512 crypt
+        run: node tests/js/crypt.test.js
+
+      - name: JavaScript syntax
+        run: |
+          for f in $(find luci-app-haproxy-advanced/htdocs -name '*.js'); do
+            node --check "$f"
+          done
+
+      - name: Shell
+        run: shellcheck -s sh -e SC2034,SC3043 haproxy-advanced/files/haproxy-advanced.init tests/syntax.sh
+
+      - name: JSON
+        run: |
+          python3 -m json.tool luci-app-haproxy-advanced/root/usr/share/luci/menu.d/luci-app-haproxy-advanced.json > /dev/null
+          python3 -m json.tool luci-app-haproxy-advanced/root/usr/share/rpcd/acl.d/luci-app-haproxy-advanced.json > /dev/null

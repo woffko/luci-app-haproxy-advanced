@@ -1,0 +1,50 @@
+config global 'global'
+	option enabled '1'
+
+config listener 'one'
+	option port '443'
+
+config listener 'two'
+	list address 'wan'
+	option port '443'
+
+config listener 'three'
+	list address 'lan'
+	option port '8443'
+	option redirect_port '443'
+
+config listener 'four'
+	list address 'lan'
+	option port '9443'
+
+config service 'a'
+	option listener 'one'
+	list hostname 'a.example.com'
+	option backend 'b'
+	option certificate '/c/a.pem'
+
+config service 'b'
+	option listener 'two'
+	list hostname 'b.example.com'
+	option backend 'b'
+	option certificate '/c/a.pem'
+
+config service 'c'
+	option listener 'three'
+	list hostname 'c.example.com'
+	option backend 'b'
+	option certificate '/c/a.pem'
+
+config service 'd'
+	option listener 'four'
+	list hostname 'a.example.com'
+	option backend 'b'
+	option certificate '/c/a.pem'
+
+config backend 'b'
+
+config server
+	option backend 'b'
+	option name 's'
+	option address '192.168.1.2'
+	option port '80'

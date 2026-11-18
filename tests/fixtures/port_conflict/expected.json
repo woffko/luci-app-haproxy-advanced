@@ -1,0 +1,23 @@
+{
+  "ok": false,
+  "errors": [
+    {
+      "where": "listener two",
+      "message": "shares port 443 and an address with listener 'one'; publish both services on one listener instead (services are routed by host name)"
+    },
+    {
+      "where": "listener three",
+      "message": "shares port 443 and an address with listener 'one'; publish both services on one listener instead (services are routed by host name)"
+    }
+  ],
+  "warnings": [
+  ],
+  "skipped": [
+  ],
+  "firewall": [
+  ],
+  "interfaces": [
+    "wan",
+    "lan"
+  ]
+}

@@ -1,0 +1,24 @@
+config global 'global'
+	option enabled '1'
+	option acme_challenge_port '18500'
+
+config listener 'pub'
+	list address 'wan'
+	option port '443'
+	option redirect_port '80'
+	option firewall '1'
+
+config service 'nas'
+	option listener 'pub'
+	list hostname 'nas.example.com'
+	option backend 'nas'
+	option acme_cert 'nas'
+
+config backend 'nas'
+
+config server
+	option backend 'nas'
+	option name 'n'
+	option address '192.168.1.2'
+	option port '443'
+	option tls '1'

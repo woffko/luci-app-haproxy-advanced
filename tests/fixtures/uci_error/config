@@ -1,0 +1,2 @@
+config __uci_error 'uci_error'
+	option message 'Parse error (section of different type overwrites prior section with same name)'

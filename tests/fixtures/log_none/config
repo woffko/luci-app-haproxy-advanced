@@ -1,0 +1,21 @@
+config global 'global'
+	option enabled '1'
+	option log_requests 'none'
+
+config listener 'pub'
+	option port '80'
+	option tls '0'
+	option default_certificate '/c/missing.pem'
+
+config service 'a'
+	option listener 'pub'
+	list hostname 'a.example.com'
+	option backend 'b'
+
+config backend 'b'
+
+config server
+	option backend 'b'
+	option name 's'
+	option address '192.168.1.2'
+	option port '80'

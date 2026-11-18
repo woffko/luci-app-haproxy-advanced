@@ -1,0 +1,31 @@
+config global 'global'
+	option enabled '1'
+
+config listener 'pub'
+	list address 'wan'
+	option port '443'
+
+config listener 'alt'
+	list address 'wan'
+	option port '18443'
+	option redirect_port '18080'
+
+config service 'a'
+	option listener 'pub'
+	list hostname 'a.example.com'
+	option backend 'b'
+	option certificate '/c/a.pem'
+
+config service 'b'
+	option listener 'alt'
+	list hostname 'b.example.com'
+	option backend 'b'
+	option certificate '/c/a.pem'
+
+config backend 'b'
+
+config server
+	option backend 'b'
+	option name 's'
+	option address '192.168.1.2'
+	option port '80'

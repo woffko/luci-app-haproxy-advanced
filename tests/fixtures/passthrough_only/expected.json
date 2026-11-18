@@ -1,0 +1,17 @@
+{
+  "ok": true,
+  "errors": [
+  ],
+  "warnings": [
+    {
+      "where": "service git",
+      "message": "passthrough services do not use: certificate, path lists, auth_group, hsts, rate_limit (use conn_rate_limit)"
+    }
+  ],
+  "skipped": [
+  ],
+  "firewall": [
+  ],
+  "interfaces": [
+  ]
+}

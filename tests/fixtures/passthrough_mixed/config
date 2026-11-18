@@ -1,0 +1,42 @@
+config global 'global'
+	option enabled '1'
+
+config listener 'edge'
+	list address 'wan'
+	option family 'any'
+	option port '443'
+	option firewall '1'
+	option firewall_zone 'wan'
+
+config service 'vault'
+	option listener 'edge'
+	list hostname 'vault.example.com'
+	option mode 'passthrough'
+	option backend 'vault'
+	list trusted_network '198.51.100.0/24'
+	list trusted_network '2001:db8:100::/48'
+	option conn_rate_limit '20'
+
+config service 'web'
+	option listener 'edge'
+	list hostname 'www.example.com'
+	option backend 'web'
+	option certificate '/etc/haproxy/certs/www.pem'
+
+config backend 'vault'
+	option health_check 'tcp'
+	option timeout_tunnel '2h'
+
+config server
+	option backend 'vault'
+	option name 'v1'
+	option address '192.168.1.20'
+	option port '8443'
+
+config backend 'web'
+
+config server
+	option backend 'web'
+	option name 'w1'
+	option address 'fd00::20'
+	option port '8080'

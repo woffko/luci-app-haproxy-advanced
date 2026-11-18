@@ -1,0 +1,21 @@
+{
+	"luci-app-haproxy-advanced": {
+		"description": "Grant access to HAProxy Advanced",
+		"read": {
+			"ubus": {
+				"luci.haproxy-advanced": [ "status", "preview", "runtime", "certificates", "acme_log", "logs" ],
+				"luci-rpc": [ "getNetworkDevices", "getWirelessDevices" ],
+				"network": [ "get_proto_handlers" ],
+				"network.device": [ "status" ],
+				"network.interface": [ "dump" ]
+			},
+			"uci": [ "haproxy-advanced", "acme", "firewall", "network", "wireless", "luci" ]
+		},
+		"write": {
+			"ubus": {
+				"luci.haproxy-advanced": [ "set_server", "acme_renew", "reload", "stock_haproxy_disable", "legacy_backup" ]
+			},
+			"uci": [ "haproxy-advanced", "acme" ]
+		}
+	}
+}

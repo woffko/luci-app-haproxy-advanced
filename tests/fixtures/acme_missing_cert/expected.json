@@ -1,0 +1,28 @@
+{
+  "ok": true,
+  "errors": [
+  ],
+  "warnings": [
+  ],
+  "skipped": [
+    {
+      "where": "service nas",
+      "message": "certificate /etc/ssl/acme/nas.example.com.combined.crt does not exist yet; the service is left out until it does"
+    },
+    {
+      "where": "listener pub",
+      "message": "none of its services can run now; only the HTTP companion on port 80 runs"
+    }
+  ],
+  "firewall": [
+    {
+      "listener": "pub",
+      "zone": "wan",
+      "port": 80,
+      "family": "ipv4"
+    }
+  ],
+  "interfaces": [
+    "wan"
+  ]
+}

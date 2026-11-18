@@ -1,0 +1,22 @@
+{
+  "ok": true,
+  "errors": [
+  ],
+  "warnings": [
+    {
+      "where": "service wiki",
+      "message": "listener 'lanhttp' has no TLS, so the certificate is not used"
+    },
+    {
+      "where": "service wiki",
+      "message": "HSTS needs a TLS listener and is not sent"
+    }
+  ],
+  "skipped": [
+  ],
+  "firewall": [
+  ],
+  "interfaces": [
+    "lan"
+  ]
+}

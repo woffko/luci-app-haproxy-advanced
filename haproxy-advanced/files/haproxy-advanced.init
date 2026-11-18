@@ -1,0 +1,144 @@
+#!/bin/sh /etc/rc.common
+# SPDX-License-Identifier: MIT
+# HAProxy reverse proxy driven by /etc/config/haproxy-advanced.
+#
+# The configuration is generated and checked by /usr/libexec/haproxy-advanced/ctl
+# (ucode). A configuration error keeps the running HAProxy on its last good
+# configuration; the result of every apply is in
+# /var/run/haproxy-advanced/last-apply.json, which LuCI shows.
+
+START=90
+STOP=10
+USE_PROCD=1
+
+NAME=haproxy-advanced
+CTL=/usr/libexec/haproxy-advanced/ctl
+HAPROXY=/usr/sbin/haproxy
+RUN_DIR=/var/run/haproxy-advanced
+CFG=/var/etc/haproxy-advanced.cfg
+
+extra_command "preview" "Print the configuration that would be generated"
+extra_command "check" "Generate the configuration and check it with haproxy -c"
+extra_command "logs" "Print recent log lines of this service"
+
+service_triggers() {
+	local iface
+
+	procd_add_reload_trigger "$NAME"
+	procd_add_raw_trigger acme.issue 5000 /etc/init.d/$NAME reload
+	procd_add_raw_trigger acme.renew 5000 /etc/init.d/$NAME reload
+
+	for iface in $("$CTL" interfaces 2>/dev/null); do
+		procd_add_reload_interface_trigger "$iface"
+	done
+}
+
+add_firewall_rules() {
+	local listener zone port family rules
+
+	# No pipe: json_add_* must run in this shell, not in a subshell.
+	rules="$("$CTL" firewall 2>/dev/null)"
+
+	while read -r listener zone port family; do
+		[ -n "$port" ] || continue
+		json_add_object ""
+		json_add_string type rule
+		json_add_string name "haproxy-advanced $listener $port"
+		json_add_string src "$zone"
+		json_add_string proto tcp
+		json_add_string dest_port "$port"
+		[ "$family" = "any" ] || json_add_string family "$family"
+		json_add_string target ACCEPT
+		json_close_object
+	done <<-EOF
+	$rules
+	EOF
+}
+
+register_instance() {
+	procd_open_instance
+	procd_set_param command "$HAPROXY" -W -db -f "$CFG" -p "$RUN_DIR/haproxy.pid" \
+		-S "$RUN_DIR/master.sock,mode,600"
+	procd_set_param respawn 3600 5 5
+	procd_set_param limits nofile="65535 65535"
+	procd_set_param stdout 1
+	procd_set_param stderr 1
+	procd_set_param term_timeout 10
+
+	procd_open_data
+	json_add_array firewall
+	add_firewall_rules
+	json_close_array
+	procd_close_data
+
+	procd_close_instance
+}
+
+start_service() {
+	local rc
+
+	if [ -z "$HAPROXY_ADVANCED_APPLIED" ]; then
+		"$CTL" apply
+		rc=$?
+		[ "$rc" -eq 3 ] && return 0
+		[ "$rc" -eq 0 ] || return 1
+	fi
+
+	register_instance
+}
+
+service_started() {
+	procd_set_config_changed firewall
+	[ -s "$CFG" ] && ( "$CTL" verify-start >/dev/null 2>&1 & )
+}
+
+reload_service() {
+	local rc
+
+	"$CTL" apply
+	rc=$?
+
+	if [ "$rc" -eq 3 ]; then
+		# Disabled: stop HAProxy and close the firewall ports.
+		procd_kill "$NAME"
+		procd_set_config_changed firewall
+		return 0
+	fi
+
+	# A configuration error keeps the running HAProxy as it is.
+	[ "$rc" -eq 0 ] || return 1
+
+	if "$CTL" running; then
+		# Update the instance's firewall data without restarting HAProxy, then
+		# reload it through the master socket, which reports the result.
+		HAPROXY_ADVANCED_APPLIED=1 rc_procd start_service
+		"$CTL" reload
+		procd_set_config_changed firewall
+	else
+		HAPROXY_ADVANCED_APPLIED=1 start
+	fi
+}
+
+stop_service() {
+	return 0
+}
+
+service_stopped() {
+	procd_set_config_changed firewall
+}
+
+status_service() {
+	"$CTL" status
+}
+
+preview() {
+	"$CTL" preview
+}
+
+check() {
+	"$CTL" check
+}
+
+logs() {
+	logread -e "$NAME" 2>/dev/null | tail -n 200
+}

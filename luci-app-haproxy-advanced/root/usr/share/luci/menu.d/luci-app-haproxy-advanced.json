@@ -1,0 +1,61 @@
+{
+	"admin/services/haproxy-advanced": {
+		"title": "HAProxy Advanced",
+		"order": 61,
+		"action": {
+			"type": "firstchild"
+		},
+		"depends": {
+			"acl": [ "luci-app-haproxy-advanced" ],
+			"uci": { "haproxy-advanced": true }
+		}
+	},
+
+	"admin/services/haproxy-advanced/overview": {
+		"title": "Overview",
+		"order": 10,
+		"action": { "type": "view", "path": "haproxy-advanced/overview" }
+	},
+
+	"admin/services/haproxy-advanced/services": {
+		"title": "Services",
+		"order": 20,
+		"action": { "type": "view", "path": "haproxy-advanced/services" }
+	},
+
+	"admin/services/haproxy-advanced/listeners": {
+		"title": "Listeners",
+		"order": 30,
+		"action": { "type": "view", "path": "haproxy-advanced/listeners" }
+	},
+
+	"admin/services/haproxy-advanced/backends": {
+		"title": "Backends",
+		"order": 40,
+		"action": { "type": "view", "path": "haproxy-advanced/backends" }
+	},
+
+	"admin/services/haproxy-advanced/users": {
+		"title": "Users",
+		"order": 50,
+		"action": { "type": "view", "path": "haproxy-advanced/users" }
+	},
+
+	"admin/services/haproxy-advanced/certificates": {
+		"title": "Certificates",
+		"order": 60,
+		"action": { "type": "view", "path": "haproxy-advanced/certificates" }
+	},
+
+	"admin/services/haproxy-advanced/settings": {
+		"title": "Settings",
+		"order": 70,
+		"action": { "type": "view", "path": "haproxy-advanced/settings" }
+	},
+
+	"admin/services/haproxy-advanced/configuration": {
+		"title": "Configuration",
+		"order": 80,
+		"action": { "type": "view", "path": "haproxy-advanced/configuration" }
+	}
+}

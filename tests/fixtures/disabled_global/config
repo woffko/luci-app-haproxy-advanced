@@ -1,0 +1,19 @@
+config global 'global'
+	option enabled '0'
+
+config listener 'pub'
+	option port '8443'
+
+config service 'a'
+	option listener 'pub'
+	list hostname 'a.example.com'
+	option backend 'b'
+	option certificate '/c/a.pem'
+
+config backend 'b'
+
+config server
+	option backend 'b'
+	option name 's'
+	option address '192.168.1.2'
+	option port '80'

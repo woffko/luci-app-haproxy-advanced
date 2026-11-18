@@ -1,0 +1,22 @@
+config global 'global'
+	option enabled '1'
+
+config listener 'dev'
+	list address 'wan'
+	list address 'hatest'
+	option bind_mode 'device'
+	option port '443'
+
+config service 'a'
+	option listener 'dev'
+	list hostname 'a.example.com'
+	option backend 'b'
+	option certificate '/c/a.pem'
+
+config backend 'b'
+
+config server
+	option backend 'b'
+	option name 's'
+	option address '192.168.1.2'
+	option port '80'

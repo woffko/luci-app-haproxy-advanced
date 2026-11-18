@@ -1,0 +1,15 @@
+{
+  "ok": true,
+  "errors": [
+  ],
+  "warnings": [
+  ],
+  "skipped": [
+  ],
+  "firewall": [
+  ],
+  "interfaces": [
+    "lan",
+    "wan"
+  ]
+}

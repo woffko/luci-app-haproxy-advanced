@@ -1,0 +1,23 @@
+{
+  "ok": true,
+  "errors": [
+  ],
+  "warnings": [
+  ],
+  "skipped": [
+    {
+      "where": "listener test",
+      "message": "interface 'hatest' has no ipv4 address now; it is left out until it gets one"
+    },
+    {
+      "where": "listener test",
+      "message": "no address is available now, so the listener and its services are left out"
+    }
+  ],
+  "firewall": [
+  ],
+  "interfaces": [
+    "hatest",
+    "wan"
+  ]
+}

@@ -1,0 +1,1599 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: luci-app-haproxy-advanced\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ru\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:70
+msgid "\"To the interfaces' devices\" listens on any address of their network devices, so a changing WAN address needs no reload."
+msgstr "«К устройствам интерфейсов» слушает любой адрес на их сетевых устройствах, поэтому смена адреса WAN не требует перезагрузки."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:248
+msgid "%s is already published by service %s on this listener."
+msgstr "%s уже опубликован сервисом %s на этом listener'е."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:166
+msgid "/etc/config/haproxy-advanced is a version 0.1 configuration. Version 0.2 uses a new format and does not convert it, so the service does not start."
+msgstr "/etc/config/haproxy-advanced — конфигурация версии 0.1. Версия 0.2 использует новый формат и не преобразует старый, поэтому сервис не запускается."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:137
+msgid "1-48 letters, digits, ., _ or -"
+msgstr "1–48 букв, цифр, ., _ или -"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:74
+msgid "1-64 letters, digits, ., _, @ or -"
+msgstr "1–64 буквы, цифры, ., _, @ или -"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:71
+msgid "4xx"
+msgstr "4xx"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:71
+msgid "5xx"
+msgstr "5xx"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:160
+msgid "A CA file, or @system-ca for publicly trusted certificates."
+msgstr "Файл CA или @system-ca для публично доверенных сертификатов."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:22
+msgid "A backend is a pool of servers that receives a service's requests. A backend serves either HTTP services or passthrough services, not both."
+msgstr "Backend — это пул серверов, получающих запросы сервиса. Один backend обслуживает либо HTTP-сервисы, либо passthrough-сервисы, но не оба вида сразу."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:474
+msgid "A certificate of the acme package. It overrides the certificate file."
+msgstr "Сертификат пакета acme. Он заменяет файл сертификата."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:124
+msgid "A crypt hash made elsewhere: $6$ (SHA-512), $5$, $1$ or $2y$ (bcrypt). HAProxy checks the hash on every request that carries a login, so slow hashes such as bcrypt cost router CPU on every request."
+msgstr "Crypt-хеш, сделанный в другом месте: $6$ (SHA-512), $5$, $1$ или $2y$ (bcrypt). HAProxy проверяет хеш при каждом запросе с логином, поэтому медленные хеши вроде bcrypt нагружают процессор роутера на каждом запросе."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:104
+msgid "A file on the router"
+msgstr "Файл на роутере"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:28
+msgid "A listener is an entry point: addresses and a port. Several services share one listener and are told apart by host name (and by SNI for TLS). Two listeners cannot use the same address and port."
+msgstr "Listener — это точка входа: адреса и порт. Несколько сервисов делят один listener и различаются по имени хоста (а для TLS — по SNI). Два listener'а не могут занимать один и тот же адрес и порт."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:207
+msgid "A port of a listener is used by another program. See \"Left out for now\" below."
+msgstr "Порт одного из listener'ов занят другой программой. Подробности ниже, в разделе «Пока пропущено»."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:412
+msgid "A service publishes one internal application under one or more host names. Requests are checked in this order: hardening, rate limits, blocked paths, custom rules, trusted networks, internal-only paths, public paths, login."
+msgstr "Сервис публикует одно внутреннее приложение под одним или несколькими именами хоста. Запросы проверяются в таком порядке: hardening, ограничения частоты, запрещённые пути, свои правила, доверенные сети, внутренние пути, публичные пути, логин."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:144
+msgid "ACME (Let's Encrypt)"
+msgstr "ACME (Let's Encrypt)"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:228
+msgid "ACME HTTP validation needs an HTTP companion port on the listener (usually 80). Set it on the Listeners tab first."
+msgstr "Для HTTP-проверки ACME у listener'а нужен HTTP-порт-компаньон (обычно 80). Сначала задайте его на вкладке «Listener'ы»."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:231
+msgid "ACME HTTP validation needs the HTTP companion port (usually 80)."
+msgstr "Для HTTP-проверки ACME нужен HTTP-порт-компаньон (обычно 80)."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:135
+msgid "ACME account e-mail"
+msgstr "E-mail учётной записи ACME"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:473
+msgid "ACME certificate"
+msgstr "Сертификат ACME"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/settings.js:44
+msgid "ACME challenge port"
+msgstr "Порт проверки ACME"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:109
+msgid "Accept the listener's ports from the zone below while the service runs. The rule is not written into /etc/config/firewall."
+msgstr "Пока сервис работает, принимать соединения на порты listener'а из зоны ниже. Правило не записывается в /etc/config/firewall."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:79
+msgid "Accepted answers"
+msgstr "Допустимые ответы"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:383
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:443
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:586
+msgid "Access"
+msgstr "Доступ"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:102
+msgid "Account e-mail"
+msgstr "E-mail учётной записи"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:630
+msgid "Action"
+msgstr "Действие"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:31
+msgid "Add an HTTP service first."
+msgstr "Сначала добавьте HTTP-сервис."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:28
+msgid "Add backend"
+msgstr "Добавить backend"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:42
+msgid "Add group"
+msgstr "Добавить группу"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:34
+msgid "Add listener"
+msgstr "Добавить listener"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:615
+msgid "Add rule"
+msgstr "Добавить правило"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:119
+msgid "Add server"
+msgstr "Добавить сервер"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:369
+msgid "Add service"
+msgstr "Добавить сервис"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:418
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:430
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:432
+msgid "Add service…"
+msgstr "Добавить сервис…"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:60
+msgid "Add user"
+msgstr "Добавить пользователя"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:140
+msgid "Address"
+msgstr "Адрес"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:61
+msgid "Address family"
+msgstr "Семейство адресов"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:47
+msgid "Addresses"
+msgstr "Адреса"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:34
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:41
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:447
+#: htdocs/luci-static/resources/view/haproxy-advanced/settings.js:29
+msgid "Advanced"
+msgstr "Дополнительно"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/settings.js:73
+msgid "All requests"
+msgstr "Все запросы"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:632
+msgid "Allow (skip the rest)"
+msgstr "Разрешить (дальше не проверять)"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:646
+msgid "Answer"
+msgstr "Ответ"
+
+#: htdocs/luci-static/resources/haproxy_advanced/common.js:278
+msgid "Any address (*)"
+msgstr "Любой адрес (*)"
+
+#: htdocs/luci-static/resources/haproxy_advanced/common.js:139
+msgid "Applied"
+msgstr "Применено"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:242
+msgid "Apply saved settings again"
+msgstr "Применить сохранённые настройки ещё раз"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:523
+msgid "As in Settings (off)"
+msgstr "Как в настройках (выкл.)"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:523
+msgid "As in Settings (on)"
+msgstr "Как в настройках (вкл.)"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:548
+msgid "Ask for a login of a user of this group (Users tab)."
+msgstr "Требовать вход пользователя этой группы (вкладка «Пользователи»)."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:633
+msgid "Ask for login"
+msgstr "Требовать вход"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:387
+msgid "At most %s requests per 10 seconds per client address."
+msgstr "Не больше %s запросов за 10 секунд с одного адреса клиента."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:29
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:130
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:469
+msgid "Backend"
+msgstr "Backend"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:116
+msgid "Backend %s"
+msgstr "Backend %s"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:24
+#: root/usr/share/luci/menu.d/luci-app-haproxy-advanced.json:33
+msgid "Backends"
+msgstr "Backend'ы"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:187
+msgid "Backup"
+msgstr "Резервный"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:36
+msgid "Balancing"
+msgstr "Балансировка"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:69
+msgid "Bind"
+msgstr "Привязка"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:529
+msgid "Blocked paths"
+msgstr "Запрещённые пути"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:39
+msgid "By client address"
+msgstr "По адресу клиента"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:159
+msgid "CA"
+msgstr "CA"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:107
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:189
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:390
+msgid "Cancel"
+msgstr "Отмена"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:133
+msgid "Certificate"
+msgstr "Сертификат"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:94
+msgid "Certificate %s: the issue starts now. The service uses the certificate as soon as it exists; \"Show ACME log\" shows the progress."
+msgstr "Сертификат %s: выпуск начинается. Сервис начнёт использовать сертификат, как только он появится; ход выпуска показывает «Показать журнал ACME»."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:153
+msgid "Certificate check"
+msgstr "Проверка сертификата"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:134
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:480
+msgid "Certificate file"
+msgstr "Файл сертификата"
+
+#: root/usr/share/luci/menu.d/luci-app-haproxy-advanced.json:45
+msgid "Certificates"
+msgstr "Сертификаты"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:136
+msgid "Certificates HAProxy can serve: PEM files that hold the chain and the private key, in /etc/haproxy/certs and /etc/ssl/acme. Key contents are never shown here."
+msgstr "Сертификаты, которые может отдавать HAProxy: PEM-файлы с цепочкой и закрытым ключом из /etc/haproxy/certs и /etc/ssl/acme. Содержимое ключей здесь никогда не показывается."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:102
+msgid "Check against the system CAs"
+msgstr "Проверять по системным CA"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:104
+msgid "Choose later"
+msgstr "Выбрать позже"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:636
+msgid "Client networks"
+msgstr "Сети клиентов"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:384
+msgid "Clients from these networks skip login and may use internal-only paths. Separate with spaces."
+msgstr "Клиенты из этих сетей не проходят вход и могут открывать внутренние пути. Разделяйте пробелами."
+
+#: root/usr/share/luci/menu.d/luci-app-haproxy-advanced.json:57
+msgid "Configuration"
+msgstr "Конфигурация"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:94
+msgid "Connect"
+msgstr "Соединение"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/settings.js:49
+msgid "Connect to servers"
+msgstr "Соединение с серверами"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:191
+#: htdocs/luci-static/resources/view/haproxy-advanced/settings.js:39
+msgid "Connection limit"
+msgstr "Лимит соединений"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:514
+msgid "Connection rate limit"
+msgstr "Ограничение частоты соединений"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/settings.js:40
+msgid "Connections HAProxy accepts at the same time."
+msgstr "Сколько соединений HAProxy принимает одновременно."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:391
+msgid "Create"
+msgstr "Создать"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:610
+msgid "Custom rules"
+msgstr "Свои правила"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:180
+msgid "DNS validation and wildcard certificates: use the ACME page of luci-app-acme; the certificates it issues appear in this list and can be chosen in a service."
+msgstr "Проверка через DNS и wildcard-сертификаты: используйте страницу ACME из luci-app-acme; выпущенные там сертификаты появляются в этом списке, и их можно выбрать в сервисе."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:101
+msgid "Default certificate"
+msgstr "Сертификат по умолчанию"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/settings.js:35
+msgid "Default of each service: deny ambiguous paths (<code>//</code>, <code>/../</code>, encoded dots and slashes) and replace forwarding headers sent by clients. A service can override it."
+msgstr "Значение по умолчанию для каждого сервиса: запрещать неоднозначные пути (<code>//</code>, <code>/../</code>, закодированные точки и слеши) и заменять заголовки пересылки, присланные клиентом. Сервис может это переопределить."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:74
+msgid "Default: the first host name of a service that uses this backend."
+msgstr "По умолчанию — первое имя хоста сервиса, который использует этот backend."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:530
+msgid "Denied for everyone, trusted networks included. Compared case-insensitively with the decoded path."
+msgstr "Запрещены для всех, включая доверенные сети. Сравниваются с декодированным путём без учёта регистра."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:631
+msgid "Deny"
+msgstr "Запретить"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:522
+msgid "Deny ambiguous paths and replace forwarding headers sent by clients."
+msgstr "Запрещать неоднозначные пути и заменять заголовки пересылки, присланные клиентом."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:130
+msgid "Disable permanently"
+msgstr "Отключить насовсем"
+
+#: htdocs/luci-static/resources/haproxy_advanced/common.js:140
+msgid "Disabled (global setting)"
+msgstr "Выключено (общая настройка)"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:102
+msgid "Do not check the certificate (private network)"
+msgstr "Не проверять сертификат (частная сеть)"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:159
+msgid "Domains"
+msgstr "Домены"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:10
+msgid "Drain (no new clients)"
+msgstr "Drain (без новых клиентов)"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:104
+msgid "Empty for Let's Encrypt."
+msgstr "Пусто — Let's Encrypt."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/settings.js:31
+msgid "Enable HAProxy Advanced"
+msgstr "Включить HAProxy Advanced"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:126
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:43
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:449
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:618
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:63
+msgid "Enabled"
+msgstr "Включено"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:235
+msgid "Enter a username: letters, digits, ., _, @ or -."
+msgstr "Введите имя пользователя: буквы, цифры, ., _, @ или -."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:200
+msgid "Enter one or more host names such as nas.example.com."
+msgstr "Введите одно или несколько имён хоста, например nas.example.com."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:225
+msgid "Enter the ACME account e-mail."
+msgstr "Введите e-mail учётной записи ACME."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:52
+msgid "Enter the account e-mail."
+msgstr "Введите e-mail учётной записи."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:222
+msgid "Enter the certificate file path."
+msgstr "Введите путь к файлу сертификата."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:213
+msgid "Enter the listener port."
+msgstr "Введите порт listener'а."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:206
+msgid "Enter the server address."
+msgstr "Введите адрес сервера."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:209
+msgid "Enter the server port."
+msgstr "Введите порт сервера."
+
+#: htdocs/luci-static/resources/haproxy_advanced/common.js:148
+msgid "Errors"
+msgstr "Ошибки"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/settings.js:72
+msgid "Errors only"
+msgstr "Только ошибки"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:454
+msgid "Exact names, case-insensitive. Each name may be used once per listener."
+msgstr "Точные имена без учёта регистра. Каждое имя может встречаться на listener'е только один раз."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:178
+msgid "Expected certificate name"
+msgstr "Ожидаемое имя в сертификате"
+
+#: htdocs/luci-static/resources/haproxy_advanced/common.js:107
+msgid "Expecting 'Name: value' with a plain value"
+msgstr "Ожидается «Имя: значение» с простым значением"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:84
+msgid "Expecting a code like 200 or a class like 2xx"
+msgstr "Ожидается код вроде 200 или класс вроде 2xx"
+
+#: htdocs/luci-static/resources/haproxy_advanced/common.js:67
+msgid "Expecting a host name such as nas.example.com (no wildcards)"
+msgstr "Ожидается имя хоста, например nas.example.com (без масок)"
+
+#: htdocs/luci-static/resources/haproxy_advanced/common.js:75
+msgid "Expecting a path starting with / (write it decoded; no spaces, %, quotes, $, # or \\)"
+msgstr "Ожидается путь, начинающийся с / (в декодированном виде; без пробелов, %, кавычек, $, # и \\)"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:70
+msgid "Expecting a path with an optional query"
+msgstr "Ожидается путь, можно с параметрами запроса"
+
+#: htdocs/luci-static/resources/haproxy_advanced/common.js:88
+msgid "Expecting a time such as 500ms, 10s, 5m or 1h"
+msgstr "Ожидается время, например 500ms, 10s, 5m или 1h"
+
+#: htdocs/luci-static/resources/haproxy_advanced/common.js:84
+msgid "Expecting an IPv4 or IPv6 address or network"
+msgstr "Ожидается адрес или сеть IPv4 либо IPv6"
+
+#: htdocs/luci-static/resources/haproxy_advanced/common.js:93
+msgid "Expecting an absolute path of plain characters"
+msgstr "Ожидается абсолютный путь из обычных символов"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:55
+msgid "Expecting an interface name, an IP address or *"
+msgstr "Ожидается имя интерфейса, IP-адрес или *"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:139
+msgid "Expires"
+msgstr "Истекает"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:109
+msgid "Extra backend lines"
+msgstr "Дополнительные строки backend'а"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:117
+msgid "Extra frontend lines"
+msgstr "Дополнительные строки frontend'а"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/settings.js:81
+msgid "Extra global lines"
+msgstr "Дополнительные строки global"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:567
+msgid "Extra request headers"
+msgstr "Дополнительные заголовки запроса"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:579
+msgid "Extra rules"
+msgstr "Дополнительные правила"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:554
+msgid "Failed logins per minute"
+msgstr "Неудачных входов в минуту"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:38
+msgid "Fewest connections"
+msgstr "Меньше всего соединений"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:139
+msgid "File"
+msgstr "Файл"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:138
+msgid "Files"
+msgstr "Файлы"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:40
+msgid "Firewall"
+msgstr "Межсетевой экран"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:40
+msgid "First available"
+msgstr "Первый доступный"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:561
+msgid "Forwarding headers"
+msgstr "Заголовки пересылки"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:555
+msgid "From one client address; more get 429 until the rate drops. 0: off."
+msgstr "С одного адреса клиента; сверх лимита — 429, пока частота не снизится. 0 — выключено."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:112
+msgid "From zone"
+msgstr "Из зоны"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:31
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:122
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:38
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:441
+#: htdocs/luci-static/resources/view/haproxy-advanced/settings.js:26
+msgid "General"
+msgstr "Общие"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:16
+msgid "Generic HTTPS application"
+msgstr "Обычное HTTPS-приложение"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:105
+msgid "Give a new password or a hash, not both."
+msgstr "Укажите либо новый пароль, либо хеш, но не оба сразу."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:95
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:100
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:82
+msgid "Global setting"
+msgstr "Общая настройка"
+
+#: root/usr/share/rpcd/acl.d/luci-app-haproxy-advanced.json:3
+msgid "Grant access to HAProxy Advanced"
+msgstr "Доступ к HAProxy Advanced"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:67
+msgid "Group"
+msgstr "Группа"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:109
+msgid "Group %s"
+msgstr "Группа %s"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:38
+msgid "Groups"
+msgstr "Группы"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:224
+msgid "HAProxy"
+msgstr "HAProxy"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:229
+#: root/usr/share/luci/menu.d/luci-app-haproxy-advanced.json:3
+msgid "HAProxy Advanced"
+msgstr "HAProxy Advanced"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:21
+msgid "HAProxy Advanced: backends"
+msgstr "HAProxy Advanced: backend'ы"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:135
+msgid "HAProxy Advanced: certificates"
+msgstr "HAProxy Advanced: сертификаты"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/configuration.js:63
+msgid "HAProxy Advanced: configuration"
+msgstr "HAProxy Advanced: конфигурация"
+
+#: htdocs/luci-static/resources/haproxy_advanced/common.js:176
+msgid "HAProxy Advanced: configuration applied"
+msgstr "HAProxy Advanced: конфигурация применена"
+
+#: htdocs/luci-static/resources/haproxy_advanced/common.js:176
+msgid "HAProxy Advanced: configuration not applied"
+msgstr "HAProxy Advanced: конфигурация не применена"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:27
+msgid "HAProxy Advanced: listeners"
+msgstr "HAProxy Advanced: listener'ы"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:411
+msgid "HAProxy Advanced: services"
+msgstr "HAProxy Advanced: сервисы"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/settings.js:21
+msgid "HAProxy Advanced: settings"
+msgstr "HAProxy Advanced: настройки"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:35
+msgid "HAProxy Advanced: users"
+msgstr "HAProxy Advanced: пользователи"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:44
+msgid "HAProxy answered: %s"
+msgstr "Ответ HAProxy: %s"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:67
+msgid "HAProxy is not running."
+msgstr "HAProxy не запущен."
+
+#: htdocs/luci-static/resources/haproxy_advanced/common.js:161
+msgid "HAProxy:"
+msgstr "HAProxy:"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:487
+msgid "HSTS"
+msgstr "HSTS"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:492
+msgid "HSTS max-age (seconds)"
+msgstr "HSTS max-age (секунды)"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:95
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:127
+msgid "HTTP companion port"
+msgstr "HTTP-порт-компаньон"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:56
+msgid "HTTP request"
+msgstr "HTTP-запрос"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:465
+msgid "HTTP reverse proxy"
+msgstr "Обратный HTTP-прокси"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:90
+msgid "HTTP/2"
+msgstr "HTTP/2"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:503
+msgid "HTTP: these clients skip login and may use internal-only paths. Passthrough: only these clients may connect."
+msgstr "HTTP: эти клиенты не проходят вход и могут открывать внутренние пути. Passthrough: подключаться могут только эти клиенты."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:521
+msgid "Hardening"
+msgstr "Hardening"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/settings.js:34
+msgid "Hardening by default"
+msgstr "Hardening по умолчанию"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:139
+msgid "Hashed in this browser; only the hash is saved."
+msgstr "Хешируется в этом браузере; сохраняется только хеш."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:446
+msgid "Headers & timeouts"
+msgstr "Заголовки и таймауты"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:568
+msgid "Headers set on requests to the server, as Name: value."
+msgstr "Заголовки, которые ставятся в запросах к серверу, в виде «Имя: значение»."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:32
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:53
+msgid "Health check"
+msgstr "Проверка состояния"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:30
+msgid "Home Assistant / WebSocket application"
+msgstr "Home Assistant / приложение с WebSocket"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:73
+msgid "Host header"
+msgstr "Заголовок Host"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:374
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:453
+msgid "Host names"
+msgstr "Имена хоста"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:141
+msgid "IP address or host name (resolved when HAProxy starts)."
+msgstr "IP-адрес или имя хоста (разрешается при запуске HAProxy)."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:63
+msgid "IPv4"
+msgstr "IPv4"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:65
+msgid "IPv4 and IPv6"
+msgstr "IPv4 и IPv6"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:64
+msgid "IPv6"
+msgstr "IPv6"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/settings.js:53
+msgid "Idle client"
+msgstr "Простой клиента"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:81
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:573
+msgid "Idle client timeout"
+msgstr "Таймаут простоя клиента"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:99
+#: htdocs/luci-static/resources/view/haproxy-advanced/settings.js:57
+msgid "Idle server"
+msgstr "Простой сервера"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/settings.js:67
+msgid "Idle time between two requests on one connection."
+msgstr "Время простоя между двумя запросами в одном соединении."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:105
+msgid "Idle time of upgraded (WebSocket) and passthrough connections, for example 1h."
+msgstr "Время простоя соединений WebSocket и passthrough, например 1h."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:498
+msgid "Include subdomains"
+msgstr "Включая поддомены"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:147
+msgid "Install the acme-acmesh package (apk add acme-acmesh) to issue certificates from here. For DNS validation use the ACME page of luci-app-acme."
+msgstr "Установите пакет acme-acmesh (apk add acme-acmesh), чтобы выпускать сертификаты отсюда. Для проверки через DNS используйте страницу ACME из luci-app-acme."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:48
+msgid "Interfaces (their current addresses, followed when they change), IP addresses, or * for any address."
+msgstr "Интерфейсы (их текущие адреса; при изменении адресов listener следует за ними), IP-адреса или * для любого адреса."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:535
+msgid "Internal-only paths"
+msgstr "Внутренние пути"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:87
+msgid "Interval"
+msgstr "Интервал"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:99
+msgid "Issue a certificate"
+msgstr "Выпустить сертификат"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:163
+msgid "Issue a certificate for a service…"
+msgstr "Выпустить сертификат для сервиса…"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:103
+msgid "Issue with ACME (Let's Encrypt)"
+msgstr "Выпустить через ACME (Let's Encrypt)"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/settings.js:66
+msgid "Keep-alive"
+msgstr "Keep-alive"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:234
+msgid "Last apply"
+msgstr "Последнее применение"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:71
+msgid "Last check"
+msgstr "Последняя проверка"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:89
+msgid "Leave empty to keep the current password. Hashed (SHA-512 crypt) in this browser; only the hash is saved."
+msgstr "Оставьте пустым, чтобы сохранить текущий пароль. Хешируется (SHA-512 crypt) в этом браузере; сохраняется только хеш."
+
+#: htdocs/luci-static/resources/haproxy_advanced/common.js:149
+#: htdocs/luci-static/resources/view/haproxy-advanced/configuration.js:47
+msgid "Left out for now"
+msgstr "Пока пропущено"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:37
+msgid "Let's Encrypt"
+msgstr "Let's Encrypt"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:102
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:135
+msgid "Let's Encrypt sends expiry notices here."
+msgstr "Сюда Let's Encrypt присылает уведомления об истечении."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/settings.js:82
+msgid "Lines added to HAProxy's <code>global</code> section, one per line. They act with root rights: anyone who can edit them controls the router."
+msgstr "Строки, добавляемые в секцию <code>global</code> HAProxy, по одной на строку. Они действуют с правами root: тот, кто может их менять, управляет роутером."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:110
+msgid "Lines added to the backend. They act with root rights."
+msgstr "Строки, добавляемые в backend. Они действуют с правами root."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:118
+msgid "Lines added to the listener's frontend. They act with root rights."
+msgstr "Строки, добавляемые во frontend listener'а. Они действуют с правами root."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:125
+msgid "Listen on"
+msgstr "Слушать на"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:35
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:375
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:459
+msgid "Listener"
+msgstr "Listener"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:114
+msgid "Listener %s"
+msgstr "Listener %s"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:58
+msgid "Listener %s has no HTTP companion port. Let's Encrypt validates over HTTP on port 80: set the companion port on the Listeners tab first."
+msgstr "У listener'а %s нет HTTP-порта-компаньона. Let's Encrypt проверяет по HTTP на порту 80: сначала задайте порт-компаньон на вкладке «Listener'ы»."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:574
+msgid "Listener or global setting"
+msgstr "Настройка listener'а или общая"
+
+#: root/usr/share/luci/menu.d/luci-app-haproxy-advanced.json:27
+msgid "Listeners"
+msgstr "Listener'ы"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/settings.js:45
+msgid "Local port of acme.sh while it validates a certificate. HTTP companion listeners send <code>/.well-known/acme-challenge/</code> there."
+msgstr "Локальный порт acme.sh на время проверки сертификата. HTTP-компаньоны listener'ов перенаправляют туда <code>/.well-known/acme-challenge/</code>."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:250
+msgid "Log"
+msgstr "Журнал"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/settings.js:77
+msgid "Log level"
+msgstr "Уровень журнала"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/settings.js:71
+msgid "Log requests"
+msgstr "Записывать запросы"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/settings.js:28
+msgid "Logging"
+msgstr "Журнал"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:146
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:445
+msgid "Login"
+msgstr "Вход"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:547
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:652
+msgid "Login group"
+msgstr "Группа входа"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:36
+msgid "Logins for services that require one (HTTP Basic authentication). A service names one group; any enabled user of that group may log in."
+msgstr "Учётные записи для сервисов, которые требуют вход (HTTP Basic). Сервис указывает одну группу; войти может любой включённый пользователь этой группы."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:173
+msgid "LuCI (uhttpd) is configured for %s. Use other ports, or move LuCI first, or HAProxy cannot listen there."
+msgstr "LuCI (uhttpd) настроен на %s. Выберите другие порты или сначала перенесите LuCI, иначе HAProxy не сможет там слушать."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:11
+msgid "Maintenance (no traffic)"
+msgstr "Обслуживание (без трафика)"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:59
+msgid "Method"
+msgstr "Метод"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:642
+msgid "Methods"
+msgstr "Методы"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:463
+msgid "Mode"
+msgstr "Режим"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:124
+msgid "More"
+msgstr "Ещё"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:175
+msgid "Move it to /etc/config/haproxy-advanced.v01 and start empty"
+msgstr "Перенести её в /etc/config/haproxy-advanced.v01 и начать с пустой"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:20
+msgid "NAS / file sharing"
+msgstr "NAS / общий доступ к файлам"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:134
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:159
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:71
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:373
+msgid "Name"
+msgstr "Имя"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:170
+msgid "Name sent to the server: empty for none, \"host\" for the request's host name, or a fixed name."
+msgstr "Имя, отправляемое серверу: пусто — не отправлять, «host» — имя хоста из запроса, либо фиксированное имя."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:374
+msgid "Names clients use, separated by spaces. DNS must point them at this router."
+msgstr "Имена, по которым обращаются клиенты, через пробел. DNS должен указывать их на этот роутер."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:515
+msgid "New connections per 10 seconds per client address. Empty or 0: off."
+msgstr "Новых соединений за 10 секунд с одного адреса клиента. Пусто или 0 — выключено."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:108
+msgid "New group with one user"
+msgstr "Новая группа с одним пользователем"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:94
+msgid "New listener…"
+msgstr "Новый listener…"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:88
+msgid "New password"
+msgstr "Новый пароль"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:160
+msgid "No ACME certificate yet."
+msgstr "Сертификатов ACME пока нет."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:140
+msgid "No certificate file found."
+msgstr "Файлы сертификатов не найдены."
+
+#: htdocs/luci-static/resources/haproxy_advanced/common.js:136
+msgid "No configuration has been applied yet."
+msgstr "Конфигурация ещё не применялась."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:36
+msgid "No listener yet. The \"Add service\" dialog on the Services tab can create one."
+msgstr "Listener'ов пока нет. Диалог «Добавить сервис» на вкладке «Сервисы» может создать его."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:173
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:216
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:254
+msgid "No log lines."
+msgstr "Записей в журнале нет."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:108
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:549
+msgid "No login"
+msgstr "Без входа"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:14
+msgid "No password"
+msgstr "Нет пароля"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:420
+msgid "No service yet. \"Add service…\" publishes the first one."
+msgstr "Сервисов пока нет. «Добавить сервис…» опубликует первый."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:54
+#: htdocs/luci-static/resources/view/haproxy-advanced/settings.js:74
+msgid "None"
+msgstr "Нет"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:154
+msgid "None (private network)"
+msgstr "Нет (частная сеть)"
+
+#: htdocs/luci-static/resources/haproxy_advanced/common.js:141
+msgid "Not applied: the running configuration was kept"
+msgstr "Не применено: работающая конфигурация сохранена"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:525
+msgid "Off"
+msgstr "Выкл."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:524
+msgid "On"
+msgstr "Вкл."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:150
+msgid "Only for HTTP backends; passthrough backends receive the client's TLS as is."
+msgstr "Только для HTTP-backend'ов; passthrough-backend'ы получают TLS клиента как есть."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:196
+msgid "Only if the server expects it."
+msgstr "Только если сервер его ожидает."
+
+#: htdocs/luci-static/resources/haproxy_advanced/common.js:98
+msgid "Only letters, digits, spaces and . _ , ; : = + * @ ! ? ( ) / - are allowed"
+msgstr "Допустимы только буквы, цифры, пробелы и . _ , ; : = + * @ ! ? ( ) / -"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:536
+msgid "Only trusted networks may use them; everyone else gets 403."
+msgstr "Доступны только доверенным сетям; остальные получают 403."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:108
+msgid "Open in firewall"
+msgstr "Открыть в межсетевом экране"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:128
+msgid "Open in firewall (wan)"
+msgstr "Открыть в межсетевом экране (wan)"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:542
+msgid "Open without login. Compared exactly (case-sensitive) with the decoded path."
+msgstr "Открыты без входа. Сравниваются с декодированным путём точно (с учётом регистра)."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:373
+msgid "Optional; letters, digits and _."
+msgstr "Необязательно; буквы, цифры и _."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:123
+msgid "Or an existing hash"
+msgstr "Или готовый хеш"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:626
+msgid "Order"
+msgstr "Порядок"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:104
+msgid "Other ACME server"
+msgstr "Другой сервер ACME"
+
+#: root/usr/share/luci/menu.d/luci-app-haproxy-advanced.json:15
+msgid "Overview"
+msgstr "Обзор"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:134
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:481
+msgid "PEM with the certificate chain and the private key."
+msgstr "PEM с цепочкой сертификатов и закрытым ключом."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:464
+msgid "Passthrough forwards the TLS connection by SNI without decrypting it; the server keeps its own certificate, and only trusted networks and the connection rate limit apply."
+msgstr "Passthrough пересылает TLS-соединение по SNI без расшифровки; сервер использует собственный сертификат, и действуют только доверенные сети и ограничение частоты соединений."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:139
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:77
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:84
+msgid "Password"
+msgstr "Пароль"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:65
+msgid "Path"
+msgstr "Путь"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:639
+msgid "Path prefixes"
+msgstr "Префиксы путей"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:444
+msgid "Paths"
+msgstr "Пути"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:34
+msgid "Plain HTTP application"
+msgstr "Приложение по обычному HTTP"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:96
+msgid "Plain HTTP port on the same addresses: answers ACME challenges and redirects to HTTPS. Usually 80; needed for ACME HTTP validation."
+msgstr "Порт обычного HTTP на тех же адресах: отвечает на проверки ACME и перенаправляет на HTTPS. Обычно 80; нужен для HTTP-проверки ACME."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:145
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:76
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:126
+msgid "Port"
+msgstr "Порт"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:372
+msgid "Preset"
+msgstr "Шаблон"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:44
+msgid "Prompt text"
+msgstr "Текст запроса"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:541
+msgid "Public paths (no login)"
+msgstr "Публичные пути (без входа)"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:371
+msgid "Publish an internal web application under a host name. Presets fill the fields below; everything stays editable afterwards."
+msgstr "Опубликуйте внутреннее веб-приложение под именем хоста. Шаблоны заполняют поля ниже; потом всё можно изменить."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:230
+msgid "Publishes internal web applications through HAProxy with TLS, host-based routing, access rules and logins."
+msgstr "Публикует внутренние веб-приложения через HAProxy: TLS, маршрутизация по имени хоста, правила доступа и вход."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:387
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:507
+msgid "Rate limit"
+msgstr "Ограничение частоты"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:9
+msgid "Ready"
+msgstr "Готов"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:148
+msgid "Ready, drain and maintenance act on the running HAProxy only; the next reload resets them. \"Disable permanently\" changes the configuration instead."
+msgstr "«Готов», drain и обслуживание действуют только на работающий HAProxy; следующая перезагрузка их сбрасывает. «Отключить насовсем» меняет конфигурацию."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:127
+msgid "Redirects to HTTPS and answers ACME challenges. Empty for none."
+msgstr "Перенаправляет на HTTPS и отвечает на проверки ACME. Пусто — не использовать."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/configuration.js:71
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:255
+msgid "Refresh"
+msgstr "Обновить"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:169
+msgid "Renew now"
+msgstr "Продлить сейчас"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:140
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:113
+msgid "Repeat password"
+msgstr "Повторите пароль"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/settings.js:61
+msgid "Request headers"
+msgstr "Заголовки запроса"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:508
+msgid "Requests per 10 seconds per client address; more get 429. Empty or 0: off."
+msgstr "Запросов за 10 секунд с одного адреса клиента; сверх лимита — 429. Пусто или 0 — выключено."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:71
+msgid "Requests/s"
+msgstr "Запросов/с"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:155
+msgid "Required"
+msgstr "Обязательна"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:37
+msgid "Round robin"
+msgstr "По кругу"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:616
+msgid "Rule"
+msgstr "Правило"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:611
+msgid "Rules of one service, checked after blocked paths and before trusted networks, lowest order first. A rule matches when all of its criteria match."
+msgstr "Правила одного сервиса: проверяются после запрещённых путей и до доверенных сетей, от меньшего порядка к большему. Правило срабатывает, когда выполнены все его условия."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:246
+msgid "Runtime"
+msgstr "Работа"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:169
+msgid "SNI"
+msgstr "SNI"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:108
+msgid "Save and issue"
+msgstr "Сохранить и выпустить"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:195
+msgid "Send PROXY v2 header"
+msgstr "Отправлять заголовок PROXY v2"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:562
+msgid "Send X-Forwarded-For, X-Forwarded-Proto and X-Forwarded-Port to the server."
+msgstr "Отправлять серверу X-Forwarded-For, X-Forwarded-Proto и X-Forwarded-Port."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:102
+msgid "Sent to clients whose SNI matches no service. Default: the first service's certificate."
+msgstr "Отдаётся клиентам, чей SNI не совпал ни с одним сервисом. По умолчанию — сертификат первого сервиса."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:120
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:377
+msgid "Server"
+msgstr "Сервер"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:61
+msgid "Server %s/%s is disabled in the configuration. Use Save & Apply to make it take effect."
+msgstr "Сервер %s/%s отключён в конфигурации. Нажмите «Сохранить и применить», чтобы это вступило в силу."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:379
+msgid "Server address"
+msgstr "Адрес сервера"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:131
+msgid "Server certificate"
+msgstr "Сертификат сервера"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:380
+msgid "Server port"
+msgstr "Порт сервера"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:147
+msgid "Server protocol"
+msgstr "Протокол сервера"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:43
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:115
+msgid "Servers"
+msgstr "Серверы"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:101
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:223
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:419
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:622
+msgid "Service"
+msgstr "Сервис"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:364
+msgid "Service %s was added. Review it, then use Save & Apply; the Configuration tab shows what HAProxy will get."
+msgstr "Сервис %s добавлен. Проверьте его и нажмите «Сохранить и применить»; на вкладке «Конфигурация» видно, что получит HAProxy."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:123
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:414
+#: root/usr/share/luci/menu.d/luci-app-haproxy-advanced.json:21
+msgid "Services"
+msgstr "Сервисы"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:71
+msgid "Sessions now"
+msgstr "Сессий сейчас"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:71
+msgid "Sessions total"
+msgstr "Сессий всего"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:129
+msgid "Set"
+msgstr "Задать"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:18
+msgid "Set (%s)"
+msgstr "Задан (%s)"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:108
+msgid "Set a password."
+msgstr "Задайте пароль."
+
+#: root/usr/share/luci/menu.d/luci-app-haproxy-advanced.json:51
+msgid "Settings"
+msgstr "Настройки"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/settings.js:22
+msgid "Settings that apply to the whole service. Every change is checked with <code>haproxy -c</code> before it is applied; a configuration that fails keeps the running one in place."
+msgstr "Настройки всего сервиса. Каждое изменение проверяется <code>haproxy -c</code> перед применением; если конфигурация не проходит проверку, работающая остаётся на месте."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:176
+msgid "Show ACME log"
+msgstr "Показать журнал ACME"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:45
+msgid "Shown in the browser's login window."
+msgstr "Показывается в окне входа браузера."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:103
+msgid "Staging server"
+msgstr "Тестовый сервер (staging)"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:159
+msgid "State"
+msgstr "Состояние"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:71
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:232
+msgid "Status"
+msgstr "Состояние"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:80
+msgid "Status codes (200) or classes (2xx). Default: 2xx and 3xx."
+msgstr "Коды (200) или классы (2xx). По умолчанию 2xx и 3xx."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:197
+msgid "Stop and disable"
+msgstr "Остановить и отключить"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:200
+msgid "Stop and disable it…"
+msgstr "Остановить и отключить…"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:186
+msgid "Stop the stock HAProxy service?"
+msgstr "Остановить штатный сервис HAProxy?"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:161
+msgid "System CA bundle (@system-ca)"
+msgstr "Системный набор CA (@system-ca)"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:55
+msgid "TCP connect"
+msgstr "TCP-соединение"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:123
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:39
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:86
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:442
+msgid "TLS"
+msgstr "TLS"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:466
+msgid "TLS passthrough"
+msgstr "TLS passthrough"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:38
+msgid "TLS passthrough (the server keeps its own certificate)"
+msgstr "TLS passthrough (сервер использует свой сертификат)"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:149
+msgid "TLS to the server"
+msgstr "TLS до сервера"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:488
+msgid "Tell browsers to use HTTPS only for this host. Browsers remember it for the max-age, so enable it once HTTPS works."
+msgstr "Сообщает браузерам, что к этому хосту можно обращаться только по HTTPS. Браузеры запоминают это на max-age, поэтому включайте, когда HTTPS уже работает."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:87
+msgid "Terminate HTTPS here, or pass TLS through for passthrough services."
+msgstr "Завершать HTTPS здесь или пропускать TLS насквозь для passthrough-сервисов."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:103
+msgid "Test certificates that browsers do not trust; use this to try the setup."
+msgstr "Тестовые сертификаты, которым браузеры не доверяют; чтобы опробовать настройку."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:55
+msgid "The ACME server must be an https:// URL."
+msgstr "Сервер ACME должен быть URL вида https://."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/configuration.js:64
+msgid "The HAProxy configuration generated from the settings, and the result of haproxy -c. Nothing is applied here; Save & Apply does that."
+msgstr "Конфигурация HAProxy, сгенерированная из настроек, и результат haproxy -c. Здесь ничего не применяется; это делает «Сохранить и применить»."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:100
+msgid "The certificate covers all host names of the service. While it is issued, acme.sh answers the challenge on the local ACME port and the listener's HTTP companion forwards it there."
+msgstr "Сертификат покрывает все имена хоста сервиса. Во время выпуска acme.sh отвечает на проверку на локальном порту ACME, а HTTP-компаньон listener'а перенаправляет её туда."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:216
+msgid "The companion port must be a port other than the listener port."
+msgstr "Порт-компаньон должен отличаться от порта listener'а."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:182
+msgid "The haproxy package's own service (/etc/init.d/haproxy) is %s. Its sample configuration listens on ports 81, 444 and 60000 as root, with a well-known stats password. HAProxy Advanced does not need it."
+msgstr "Собственный сервис пакета haproxy (/etc/init.d/haproxy) %s. Его пример конфигурации слушает порты 81, 444 и 60000 от root, с общеизвестным паролем статистики. HAProxy Advanced он не нужен."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:238
+msgid "The password needs at least 8 characters."
+msgstr "Пароль должен быть не короче 8 символов."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:240
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:120
+msgid "The passwords differ."
+msgstr "Пароли не совпадают."
+
+#: htdocs/luci-static/resources/haproxy_advanced/common.js:78
+msgid "The path must not contain //, /./ or /../"
+msgstr "Путь не должен содержать //, /./ или /../"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:171
+msgid "The request's host name"
+msgstr "Имя хоста из запроса"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/configuration.js:45
+msgid "The service is disabled in Settings, so nothing runs."
+msgstr "Сервис выключен в настройках, поэтому ничего не работает."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:653
+msgid "The service's group"
+msgstr "Группа сервиса"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/configuration.js:33
+msgid "These settings cannot be applied:"
+msgstr "Эти настройки нельзя применить:"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:133
+msgid "This is not a crypt hash."
+msgstr "Это не crypt-хеш."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/configuration.js:29
+msgid "This is the configuration of the saved settings."
+msgstr "Это конфигурация сохранённых настроек."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/configuration.js:28
+msgid "This is the configuration of the settings as they are now in LuCI, unsaved changes included."
+msgstr "Это конфигурация настроек в их текущем виде в LuCI, включая несохранённые изменения."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:187
+msgid "This stops /etc/init.d/haproxy and disables it at boot. /etc/haproxy.cfg is not changed; \"service haproxy enable\" undoes it."
+msgstr "Это остановит /etc/init.d/haproxy и отключит его автозапуск. /etc/haproxy.cfg не меняется; отменить можно командой «service haproxy enable»."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/settings.js:62
+msgid "Time a client has to send its complete request headers. Short values stop slow-header attacks."
+msgstr "Сколько времени клиент может присылать заголовки запроса целиком. Небольшие значения защищают от атак медленными заголовками."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:33
+#: htdocs/luci-static/resources/view/haproxy-advanced/settings.js:27
+msgid "Timeouts"
+msgstr "Таймауты"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:71
+msgid "To the addresses"
+msgstr "К адресам"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:72
+msgid "To the interfaces' devices"
+msgstr "К устройствам интерфейсов"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:384
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:502
+msgid "Trusted networks"
+msgstr "Доверенные сети"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:203
+msgid "Trusted networks must be IP addresses or networks such as 192.168.1.0/24."
+msgstr "Доверенные сети — это IP-адреса или сети, например 192.168.1.0/24."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:102
+msgid "Use at least 8 characters."
+msgstr "Используйте не меньше 8 символов."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:139
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:159
+msgid "Used by"
+msgstr "Используется"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:188
+msgid "Used only when all other servers are down."
+msgstr "Используется, только когда все остальные серверы недоступны."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:61
+msgid "User"
+msgstr "Пользователь"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:138
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:71
+msgid "Username"
+msgstr "Имя пользователя"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:49
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:56
+#: root/usr/share/luci/menu.d/luci-app-haproxy-advanced.json:39
+msgid "Users"
+msgstr "Пользователи"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:159
+msgid "Validation"
+msgstr "Проверка"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:225
+msgid "Version"
+msgstr "Версия"
+
+#: htdocs/luci-static/resources/haproxy_advanced/common.js:150
+#: htdocs/luci-static/resources/view/haproxy-advanced/configuration.js:48
+msgid "Warnings"
+msgstr "Предупреждения"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:26
+msgid "Web admin panel (login outside trusted networks)"
+msgstr "Веб-панель администратора (вход вне доверенных сетей)"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:104
+msgid "WebSocket and passthrough idle"
+msgstr "Простой WebSocket и passthrough"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:183
+msgid "Weight"
+msgstr "Вес"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:62
+msgid "Which addresses of the interfaces (and of *) are used."
+msgstr "Какие адреса интерфейсов (и *) используются."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:183
+msgid "and"
+msgstr "и"
+
+#: htdocs/luci-static/resources/haproxy_advanced/common.js:162
+msgid "did not load the new configuration; the previous one keeps running"
+msgstr "не загрузил новую конфигурацию; работает прежняя"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:223
+msgid "disabled in Settings"
+msgstr "выключен в настройках"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:223
+msgid "enabled"
+msgstr "включён"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:183
+msgid "enabled at boot"
+msgstr "включён при загрузке"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:44
+msgid "error"
+msgstr "ошибка"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/configuration.js:42
+msgid "haproxy -c accepts this configuration."
+msgstr "haproxy -c принимает эту конфигурацию."
+
+#: htdocs/luci-static/resources/haproxy_advanced/common.js:155
+msgid "haproxy -c rejected the configuration:"
+msgstr "haproxy -c отклонил конфигурацию:"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/configuration.js:38
+msgid "haproxy -c rejects this configuration:"
+msgstr "haproxy -c отклоняет эту конфигурацию:"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:580
+msgid "http-request, http-response or http-after-response rules without a condition, one per line; they apply to this service only. They act with root rights."
+msgstr "Правила http-request, http-response или http-after-response без условия, по одному на строку; действуют только для этого сервиса. Они выполняются с правами root."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:154
+msgid "issued"
+msgstr "выпущен"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:596
+msgid "login"
+msgstr "вход"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/backends.js:50
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:99
+#: htdocs/luci-static/resources/view/haproxy-advanced/listeners.js:130
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:97
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:475
+msgid "none"
+msgstr "нет"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:154
+msgid "not issued yet"
+msgstr "ещё не выпущен"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:130
+msgid "not loaded by HAProxy"
+msgstr "HAProxy его не загрузил"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:224
+msgid "not running"
+msgstr "не запущен"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:510
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:517
+msgid "off"
+msgstr "выкл."
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:607
+msgid "open"
+msgstr "открыт"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:593
+msgid "passthrough"
+msgstr "passthrough"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:602
+msgid "path rules"
+msgstr "правила путей"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:605
+msgid "rate limit"
+msgstr "ограничение частоты"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:183
+msgid "running"
+msgstr "запущен"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/overview.js:224
+msgid "running (PID %s)"
+msgstr "запущен (PID %s)"
+
+#: htdocs/luci-static/resources/haproxy_advanced/common.js:162
+msgid "running the new configuration"
+msgstr "работает с новой конфигурацией"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/certificates.js:153
+msgid "staging"
+msgstr "staging"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/services.js:599
+msgid "trusted networks"
+msgstr "доверенные сети"
+
+#: htdocs/luci-static/resources/view/haproxy-advanced/users.js:18
+msgid "unknown"
+msgstr "неизвестно"

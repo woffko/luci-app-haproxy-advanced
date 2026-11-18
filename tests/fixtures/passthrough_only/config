@@ -1,0 +1,26 @@
+config global 'global'
+	option enabled '1'
+
+config listener 'tls'
+	option port '8443'
+
+config service 'git'
+	option listener 'tls'
+	list hostname 'git.example.com'
+	option mode 'passthrough'
+	option backend 'git'
+	option certificate '/etc/haproxy/certs/ignored.pem'
+	list blocked_path '/x/'
+	option auth_group 'g'
+	option hsts '1'
+	option rate_limit '5'
+
+config auth_group 'g'
+
+config backend 'git'
+
+config server
+	option backend 'git'
+	option name 'git1'
+	option address 'git.lan'
+	option port '443'
